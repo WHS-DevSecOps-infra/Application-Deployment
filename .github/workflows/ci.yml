@@ -11,14 +11,32 @@ permissions:
   id-token: write
 
 jobs:
-  terraform-ci:
+  OIDC-dev:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ap-northeast-2
-          role-to-assume: arn:aws:iam::433331841346:role/Application-Deployment-role
+          role-to-assume: arn:aws:iam::926943999891:role/application-deployment-role1
+          
+  OIDC-prod:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ap-northeast-2
+          role-to-assume: arn:aws:iam::243359234795:role/Application-Deployment-role2
+          
+  OIDC-stage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ap-northeast-2
+          role-to-assume: arn:aws:iam::929368846645:role/Application-deployment-role3
 
       - uses: hashicorp/setup-terraform@v1
         with:
