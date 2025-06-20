@@ -1,9 +1,5 @@
 .DS_Store
 .idea
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> ccd1a9a (terraform state를 통해 이미지 로드)
 
 # tfstate files
 *.tfstate
