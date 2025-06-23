@@ -84,7 +84,7 @@ resource "aws_ecs_task_definition" "ecs_task_definition" {
     container_definitions = jsonencode([
         {
             name      = "${var.project_name}-container"
-            image     = "sh1220/mnrader"
+            image     = "${aws_ecr_repository.app.repository_url}:latest"
             cpu       = 256
             memory    = 512
             essential = true
