@@ -77,7 +77,7 @@ jobs:
         working-directory: ${{ needs.detect-changes.outputs.changed_dir }}
 
       - name: Terraform Import S3 Bucket
-        run: terraform import aws_s3_bucket.tfstate_app cloudfence-tfstate-app #여기 버킷명 다시 확인 필요
+        run: terraform import aws_s3_bucket.tfstate_app cloudfence-tfstate-app #여기 버킷명 다시 확인필요
         working-directory: ${{ needs.detect-changes.outputs.changed_dir }}
 
       # - name: Terraform Import DynamoDB Table

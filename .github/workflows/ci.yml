@@ -132,7 +132,7 @@ jobs:
           name: terraform-plan
           path: ${{ steps.detect.outputs.work_dir }}/plan.txt
 
-      # 15. terraform plan 결과를 바이너리 형태로 저장 (infracost 용)
+      # 15. terraform plan 결과를 바이너리 형태로 저장 (infracost용)
       - name: Terraform Plan (for infracost)
         if: steps.detect.outputs.skip != 'true'
         run: terraform plan -refresh=false -out=tfplan.binary
