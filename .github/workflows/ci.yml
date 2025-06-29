@@ -1,24 +1,13 @@
-<<<<<<< HEAD
-name: Organization CI
-=======
 name: Application-deployment CI
->>>>>>> origin/main
 
 # PR이 main 브랜치로 들어올 때만 작동하도록 설정
 on:
-<<<<<<< HEAD
   pull_request:
     branches: [main]
     paths:
       - "operation-team-account/**"
       - "identity-team-account/**"
       - "prod-team-account/**"
-=======
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
->>>>>>> origin/main
 
 # 최소 권한 원칙 적용
 permissions:
@@ -32,7 +21,6 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-<<<<<<< HEAD
       # 1. PR 브랜치 코드 체크아웃
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -86,38 +74,6 @@ jobs:
           path: changed_dir.txt
 
       # 6. AWS OIDC 기반 인증 설정
-=======
-      # 1. PR 코드 체크아웃
-      - name: Checkout Code
-        uses: actions/checkout@v3
-
-      # 2. 최신 main 브랜치를 fetch
-      - name: Fetch origin/main
-        run: git fetch origin main
-
-      # 3. 변경된 디렉토리 감지
-      - name: Detect Changed Folder
-        id: detect
-        run: |
-          FILES=$(git diff --name-only origin/main ${{ github.sha }})
-          echo "Changed files:"
-          echo "$FILES"
-
-          if echo "$FILES" | grep -q '^operation-team-account/'; then
-            echo "account=OPERATION" >> $GITHUB_OUTPUT
-            echo "work_dir=operation-team-account" >> $GITHUB_OUTPUT
-          elif echo "$FILES" | grep -q '^identity-team-account/'; then
-            echo "account=IDENTITY" >> $GITHUB_OUTPUT
-            echo "work_dir=identity-team-account" >> $GITHUB_OUTPUT
-          elif echo "$FILES" | grep -q '^prod-team-account/'; then
-            echo "account=PROD" >> $GITHUB_OUTPUT
-            echo "work_dir=prod-team-account" >> $GITHUB_OUTPUT
-          else
-            echo "No relevant folder changed. Skipping rest of workflow."
-            echo "skip=true" >> $GITHUB_OUTPUT
-          fi
-      # 4. AWS Credentials 설정
->>>>>>> origin/main
       - name: Configure AWS Credentials via OIDC
         if: steps.detect.outputs.skip != 'true'
         uses: aws-actions/configure-aws-credentials@v4
@@ -125,7 +81,6 @@ jobs:
           aws-region: ap-northeast-2
           role-to-assume: ${{ secrets[format('ROLE_ARN_{0}', steps.detect.outputs.account)] }}
 
-<<<<<<< HEAD
       # 7. tfsec 설치 (보안 스캐닝 도구)
       - name: Install tfsec
         if: steps.detect.outputs.skip != 'true'
@@ -139,33 +94,18 @@ jobs:
           tfsec --minimum-severity HIGH --no-color ${{ steps.detect.outputs.work_dir }}
 
       # 9. Terraform CLI 설치
-=======
-      # 5. tfsec
-      - name: Run tfsec
-        if: steps.detect.outputs.skip != 'true'
-        uses: aquasecurity/tfsec-action@v1.0.0
-        with:
-          working-directory: ${{ steps.detect.outputs.work_dir }}
-
-      # 6. Terraform 설정
->>>>>>> origin/main
       - name: Setup Terraform
         if: steps.detect.outputs.skip != 'true'
         uses: hashicorp/setup-terraform@v1
         with:
           terraform_version: 1.4.0
 
-<<<<<<< HEAD
       # 10. Terraform Init 실행
-=======
-      # 7. terraform init
->>>>>>> origin/main
       - name: Terraform Init
         if: steps.detect.outputs.skip != 'true'
         run: terraform init
         working-directory: ${{ steps.detect.outputs.work_dir }}
 
-<<<<<<< HEAD
       # 11. terraform fmt 실행 (코드 스타일 검사)
       - name: Terraform Format Check
         if: steps.detect.outputs.skip != 'true'
@@ -173,34 +113,18 @@ jobs:
         working-directory: ${{ steps.detect.outputs.work_dir }}
 
       # 12. terraform validate 실행 (유효성 검사)
-=======
-      # 8. terraform fmt
-      - name: Terraform Format Check
-        if: steps.detect.outputs.skip != 'true'
-        run: terraform fmt -check -recursive
-
-      # 9. terraform validate
->>>>>>> origin/main
       - name: Terraform Validate
         if: steps.detect.outputs.skip != 'true'
         run: terraform validate
         working-directory: ${{ steps.detect.outputs.work_dir }}
 
-<<<<<<< HEAD
       # 13. terraform plan 실행 결과를 텍스트로 저장
-=======
-      # 10. terraform plan 저장
->>>>>>> origin/main
       - name: Terraform Plan (text)
         if: steps.detect.outputs.skip != 'true'
         run: terraform plan -no-color > plan.txt
         working-directory: ${{ steps.detect.outputs.work_dir }}
 
-<<<<<<< HEAD
       # 14. plan 결과를 아티팩트로 업로드
-=======
-      # 11. plan 텍스트 아티팩트 저장
->>>>>>> origin/main
       - name: Upload Plan Artifact
         if: steps.detect.outputs.skip != 'true'
         uses: actions/upload-artifact@v4
@@ -208,36 +132,23 @@ jobs:
           name: terraform-plan
           path: ${{ steps.detect.outputs.work_dir }}/plan.txt
 
-<<<<<<< HEAD
       # 15. terraform plan 결과를 바이너리 형태로 저장 (infracost용)
-=======
-      # 12. terraform plan (binary)
->>>>>>> origin/main
       - name: Terraform Plan (for infracost)
         if: steps.detect.outputs.skip != 'true'
         run: terraform plan -refresh=false -out=tfplan.binary
         working-directory: ${{ steps.detect.outputs.work_dir }}
 
-<<<<<<< HEAD
       # 16. plan 바이너리를 JSON으로 변환
-=======
-      # 13. plan → json 변환
->>>>>>> origin/main
       - name: Convert Plan to JSON
         if: steps.detect.outputs.skip != 'true'
         run: terraform show -json tfplan.binary > plan.json
         working-directory: ${{ steps.detect.outputs.work_dir }}
 
-<<<<<<< HEAD
       # 17. Infracost CLI 설치 (비용 분석용)
-=======
-      # 14. Infracost 설치
->>>>>>> origin/main
       - name: Setup Infracost
         if: steps.detect.outputs.skip != 'true'
         uses: infracost/actions/setup@v2
 
-<<<<<<< HEAD
       # 18. Generate Infracost Breakdown
       - name: Generate Infracost Breakdown
         if: steps.detect.outputs.skip != 'true'
@@ -260,27 +171,6 @@ jobs:
         uses: infracost/actions@v1
         with:
           path: ${{ steps.detect.outputs.work_dir }}/plan.json
-=======
-      # 15. 비용 분석 실행
-      - name: Generate Infracost Breakdown
-        if: steps.detect.outputs.skip != 'true'
-        run: |
-          ls -al ${{ steps.detect.outputs.work_dir }}
-          cat ${{ steps.detect.outputs.work_dir }}/plan.json
-          infracost breakdown \
-            --path=${{ steps.detect.outputs.work_dir }}/plan.json \
-            --format=json \
-            --out-file=/tmp/infracost.json
-        env:
-          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
-
-      # 16. PR 코멘트로 비용 분석 남기기
-      - name: Infracost Comment on Pull Request
-        if: steps.detect.outputs.skip != 'true' && github.event_name == 'pull_request'
-        uses: infracost/actions@v1
-        with:
-          path: /tmp/infracost.json
->>>>>>> origin/main
           behavior: update
         env:
           INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
