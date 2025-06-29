@@ -81,4 +81,8 @@ resource "aws_dynamodb_table" "lock_app" {
     Name        = "Terraform Lock Table"
     Environment = "application-deployment"
   }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> origin/main

@@ -1,6 +1,12 @@
-name: Terraform Apply
+name: Application-deployment CD
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "operation-team-account/**"
+      - "identity-team-account/**"
+      - "prod-team-account/**"
   push:
     branches: [main]
 
