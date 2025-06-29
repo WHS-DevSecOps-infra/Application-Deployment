@@ -1,47 +1,177 @@
-name: App CI
+name: Organization CI
 
+# PR이 main 브랜치로 들어올 때만 작동하도록 설정
 on:
   pull_request:
-    branches: [main, dev]
-  push:
-    branches: [dev]
+    branches: [main]
+    paths:
+      - "operation-team-account/**"
+      - "identity-team-account/**"
+      - "prod-team-account/**"
 
+# 최소 권한 원칙 적용
 permissions:
   contents: read
+  pull-requests: write
   id-token: write
 
 jobs:
-  OIDC-dev:
+  terraform-ci:
+    name: Terraform CI per changed folder
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ap-northeast-2
-          role-to-assume: arn:aws:iam::926943999891:role/application-deployment-role1
-          
-  OIDC-prod:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ap-northeast-2
-          role-to-assume: arn:aws:iam::243359234795:role/Application-Deployment-role2
-          
-  OIDC-stage:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-region: ap-northeast-2
-          role-to-assume: arn:aws:iam::929368846645:role/Application-deployment-role3
 
-      - uses: hashicorp/setup-terraform@v1
+    steps:
+      # 1. PR 브랜치 코드 체크아웃
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      # 2. 최신 main 브랜치 정보를 가져와 diff 기반 비교 준비
+      - name: Fetch origin/main
+        run: git fetch origin main
+
+      # 3. 변경된 디렉토리 감지 (운영/ID/프로덕션 팀 폴더 기준)
+      - name: Detect Changed Folder
+        id: detect
+        run: |
+          FILES=$(git diff --name-only origin/main..${{ github.sha }})
+          echo "Changed files in PR:"
+          echo "$FILES"
+
+          if [ -z "$FILES" ]; then
+            echo "No files changed. Skipping Terraform plan."
+            exit 0
+          fi
+
+          if echo "$FILES" | grep -q '^operation-team-account/'; then
+            DIR="operation-team-account"
+            ACCOUNT="OPERATION"
+          elif echo "$FILES" | grep -q '^identity-team-account/'; then
+            DIR="identity-team-account"
+            ACCOUNT="IDENTITY"
+          elif echo "$FILES" | grep -q '^prod-team-account/'; then
+            DIR="prod-team-account"
+            ACCOUNT="PROD"
+          else
+            echo "No matching folder changed."
+            exit 1
+          fi
+
+          echo "$DIR" > changed_dir.txt
+          echo "work_dir=$DIR" >> $GITHUB_OUTPUT
+          echo "account=$ACCOUNT" >> $GITHUB_OUTPUT
+
+      # 4. 감지된 디렉토리 정보를 파일로 저장
+      - name: Save Changed Dir
+        if: steps.detect.outputs.skip != 'true'
+        run: echo "${{ steps.detect.outputs.work_dir }}" > changed_dir.txt
+
+      # 5. 아티팩트로 changed_dir.txt 저장 (apply workflow에서 활용 가능)
+      - name: Upload Changed Dir as Artifact
+        if: steps.detect.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: changed-dir
+          path: changed_dir.txt
+
+      # 6. AWS OIDC 기반 인증 설정
+      - name: Configure AWS Credentials via OIDC
+        if: steps.detect.outputs.skip != 'true'
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ap-northeast-2
+          role-to-assume: ${{ secrets[format('ROLE_ARN_{0}', steps.detect.outputs.account)] }}
+
+      # 7. tfsec 설치 (보안 스캐닝 도구)
+      - name: Install tfsec
+        if: steps.detect.outputs.skip != 'true'
+        run: |
+          curl -sSL https://raw.githubusercontent.com/aquasecurity/tfsec/master/scripts/install_linux.sh | bash
+
+      # 8. tfsec 실행 - HIGH 이상 위협 있을 경우에만 실패 처리
+      - name: Run tfsec (fail only on HIGH and above)
+        if: steps.detect.outputs.skip != 'true'
+        run: |
+          tfsec --minimum-severity HIGH --no-color ${{ steps.detect.outputs.work_dir }}
+
+      # 9. Terraform CLI 설치
+      - name: Setup Terraform
+        if: steps.detect.outputs.skip != 'true'
+        uses: hashicorp/setup-terraform@v1
         with:
           terraform_version: 1.4.0
 
-      - run: terraform init
-      - run: terraform validate
-      - run: terraform plan
+      # 10. Terraform Init 실행
+      - name: Terraform Init
+        if: steps.detect.outputs.skip != 'true'
+        run: terraform init
+        working-directory: ${{ steps.detect.outputs.work_dir }}
+
+      # 11. terraform fmt 실행 (코드 스타일 검사)
+      - name: Terraform Format Check
+        if: steps.detect.outputs.skip != 'true'
+        run: terraform fmt -check -recursive
+        working-directory: ${{ steps.detect.outputs.work_dir }}
+
+      # 12. terraform validate 실행 (유효성 검사)
+      - name: Terraform Validate
+        if: steps.detect.outputs.skip != 'true'
+        run: terraform validate
+        working-directory: ${{ steps.detect.outputs.work_dir }}
+
+      # 13. terraform plan 실행 결과를 텍스트로 저장
+      - name: Terraform Plan (text)
+        if: steps.detect.outputs.skip != 'true'
+        run: terraform plan -no-color > plan.txt
+        working-directory: ${{ steps.detect.outputs.work_dir }}
+
+      # 14. plan 결과를 아티팩트로 업로드
+      - name: Upload Plan Artifact
+        if: steps.detect.outputs.skip != 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan
+          path: ${{ steps.detect.outputs.work_dir }}/plan.txt
+
+      # 15. terraform plan 결과를 바이너리 형태로 저장 (infracost 용)
+      - name: Terraform Plan (for infracost)
+        if: steps.detect.outputs.skip != 'true'
+        run: terraform plan -refresh=false -out=tfplan.binary
+        working-directory: ${{ steps.detect.outputs.work_dir }}
+
+      # 16. plan 바이너리를 JSON으로 변환
+      - name: Convert Plan to JSON
+        if: steps.detect.outputs.skip != 'true'
+        run: terraform show -json tfplan.binary > plan.json
+        working-directory: ${{ steps.detect.outputs.work_dir }}
+
+      # 17. Infracost CLI 설치 (비용 분석용)
+      - name: Setup Infracost
+        if: steps.detect.outputs.skip != 'true'
+        uses: infracost/actions/setup@v2
+
+      # 18. Generate Infracost Breakdown
+      - name: Generate Infracost Breakdown
+        if: steps.detect.outputs.skip != 'true'
+        run: |
+          echo "WORK DIR: ${{ steps.detect.outputs.work_dir }}"
+          ls -al
+          ls -al plan.json || echo "plan.json not found!"
+          cat plan.json || echo "plan.json not printable"
+          infracost breakdown \
+            --path=./plan.json \
+            --format=json \
+            --out-file=/tmp/infracost.json
+        working-directory: ${{ steps.detect.outputs.work_dir }}
+        env:
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+
+      # 19. Comment on Pull Request
+      - name: Infracost Comment on Pull Request
+        if: steps.detect.outputs.skip != 'true'
+        uses: infracost/actions@v1
+        with:
+          path: ${{ steps.detect.outputs.work_dir }}/plan.json
+          behavior: update
+        env:
+          INFRACOST_API_KEY: ${{ secrets.INFRACOST_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
