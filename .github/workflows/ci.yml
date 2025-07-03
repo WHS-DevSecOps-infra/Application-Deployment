@@ -1,9 +1,10 @@
-name: Organization CI
+name: Application-deployment CI
 
 on:
   pull_request:
     branches: [main]
     # 특정 디렉토리의 파일이 변경되었을 때에만 워크플로우 실행
+
     paths:
       - "operation-team-account/**"
       - "identity-team-account/**"
@@ -100,6 +101,7 @@ jobs:
 
       # Terraform 설치
       - name: Setup Terraform
+
         uses: hashicorp/setup-terraform@v1
         with:
           terraform_version: 1.4.0

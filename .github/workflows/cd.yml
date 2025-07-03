@@ -12,6 +12,7 @@ jobs:
   detect-changes:
     runs-on: ubuntu-latest
     outputs:
+
       matrix: ${{ steps.set.outputs.matrix }}
     steps:
       # 현재 push된 브랜치의 코드를 워크플로우 환경으로 가져옴
@@ -21,6 +22,7 @@ jobs:
       # 변경된 디렉토리 필터링
       - name: Filter Paths
         id: filter
+
         uses: dorny/paths-filter@v3
         with:
           filters: |
@@ -85,6 +87,7 @@ jobs:
           role-to-assume: ${{ secrets[matrix.role_key] }}
 
       # Terraform 설치
+
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v1
         with:
