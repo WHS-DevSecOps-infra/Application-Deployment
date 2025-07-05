@@ -1,121 +1,19 @@
-# VPC
-resource "aws_vpc" "vpc" {
-  cidr_block = var.vpc_cidr
-  enable_dns_support = true
-  enable_dns_hostnames = true
-  tags = {
-    Name = "${var.project_name}-vpc"
-  }
+output "vpc_id" {
+  description = "생성된 VPC의 ID"
+  value       = aws_vpc.vpc.id
 }
 
-# subnet(public)
-resource "aws_subnet" "public1" {
-    vpc_id            = aws_vpc.vpc.id
-    cidr_block        = "10.0.1.0/24"
-    availability_zone = "ap-northeast-2a"
-    map_public_ip_on_launch = true
-    tags = {
-        Name = "public_subnet1"
-    }
+output "public_subnet_ids" {
+  description = "생성된 Public Subnet들의 ID 목록"
+  value       = [aws_subnet.public1.id, aws_subnet.public2.id]
 }
 
-resource "aws_subnet" "public2" {
-    vpc_id            = aws_vpc.vpc.id
-    cidr_block        = "10.0.2.0/24"
-    availability_zone = "ap-northeast-2b"
-    map_public_ip_on_launch = true
-    tags = {
-        Name = "public_subnet2"
-    }
+output "private_subnet_ids" {
+  description = "생성된 Private Subnet들의 ID 목록"
+  value       = [aws_subnet.private1.id, aws_subnet.private2.id]
 }
 
-# subnet(private)
-
-resource "aws_subnet" "private1" {
-    vpc_id            = aws_vpc.vpc.id
-    cidr_block        = "10.0.101.0/24"
-    availability_zone = "ap-northeast-2a"
-    tags = {
-        Name = "private_subnet1"
-    }
-}   
-
-resource "aws_subnet" "private2" {
-    vpc_id            = aws_vpc.vpc.id
-    cidr_block        = "10.0.102.0/24"
-    availability_zone = "ap-northeast-2b"
-    tags = {
-        Name = "private_subnet2"
-    }
-}  
-
-# Internet Gateway
-resource "aws_internet_gateway" "igw" {
-    vpc_id = aws_vpc.vpc.id
-    tags = {
-        Name = "${var.project_name}-igw"
-    }
-}
-
-# Public Route Table 
-resource "aws_route_table" "public" {
-    vpc_id = aws_vpc.vpc.id
-    route {
-        cidr_block = "0.0.0.0/0"
-        gateway_id = aws_internet_gateway.igw.id
-    }
-    tags = {
-        Name = "${var.project_name}-public-route-table"
-    }
-}
-
-# Associate Public Subnets with Route Table
-resource "aws_route_table_association" "public1" {
-    subnet_id      = aws_subnet.public1.id
-    route_table_id = aws_route_table.public.id
-}
-
-resource "aws_route_table_association" "public2" {
-    subnet_id      = aws_subnet.public2.id
-    route_table_id = aws_route_table.public.id
-}
-
-# NAT Gateway
-resource "aws_eip" "nat" {
-    domain = "vpc"
-    tags = {
-        Name = "${var.project_name}-nat-eip"    
-    }
-}
-
-resource "aws_nat_gateway" "nat" {
-    allocation_id = aws_eip.nat.id
-    subnet_id     = aws_subnet.public1.id
-    tags = {
-        Name = "${var.project_name}-nat-gateway"
-    }
-    depends_on = [aws_internet_gateway.igw]
-}
-
-# Private Route Table
-resource "aws_route_table" "private" {
-    vpc_id = aws_vpc.vpc.id
-    route {
-        cidr_block = "0.0.0.0/0"
-        nat_gateway_id = aws_nat_gateway.nat.id
-    }
-    tags = {
-        Name = "${var.project_name}-private-route-table"
-    }
-}
-
-# Associate Private Subnets with Route Table
-resource "aws_route_table_association" "private1" {
-    subnet_id      = aws_subnet.private1.id
-    route_table_id = aws_route_table.private.id
-}
-
-resource "aws_route_table_association" "private2" {
-    subnet_id      = aws_subnet.private2.id
-    route_table_id = aws_route_table.private.id
+output "alb_dns_name" {
+  description = "ALB의 DNS 이름"
+  value       = aws_lb.alb.dns_name
 }
