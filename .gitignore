@@ -1,7 +1,18 @@
 .DS_Store
+.idea
 
-.terraform/
-.terraform.lock.hcl
+# tfstate files
 *.tfstate
-*.tfstate.backup
+*.tfstate.*
+.terraform
+.terraform/
 *.tfvars
+*.tfvars.json
+*.tfplan
+*.tfplan.json
+*.tfignore
+*.tfbackup
+*.tfstate.backup
+*.tfstate.backup.*
+*.tfstate.backup.json
+*.tfstate.backup.json.*
