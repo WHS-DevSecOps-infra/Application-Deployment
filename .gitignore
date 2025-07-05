@@ -1,4 +1,18 @@
 .DS_Store
 .idea
+
+# tfstate files
 *.tfstate
 *.tfstate.*
+.terraform
+.terraform/
+*.tfvars
+*.tfvars.json
+*.tfplan
+*.tfplan.json
+*.tfignore
+*.tfbackup
+*.tfstate.backup
+*.tfstate.backup.*
+*.tfstate.backup.json
+*.tfstate.backup.json.*

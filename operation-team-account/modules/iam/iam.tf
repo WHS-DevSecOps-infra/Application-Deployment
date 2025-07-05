@@ -21,6 +21,7 @@ data "aws_iam_policy_document" "ecr_repo_policy_document" {
       "ecr:InitiateLayerUpload",
       "ecr:UploadLayerPart",
       "ecr:CompleteLayerUpload"
+      "ecr:GetAuthorizationToken"
     ]
   }
 }
