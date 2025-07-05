@@ -43,8 +43,8 @@ resource "aws_lb" "alb" {
     name               = "${var.project_name}-alb"
     internal           = false
     load_balancer_type = "application"
-    security_groups    = [aws_security_group.alb_sg.id]
-    subnets            = [aws_subnet.public1.id, aws_subnet.public2.id]
+    security_groups    = [var.alb_security_group_id]
+    subnets            = var.public_subnet_ids
 
     enable_deletion_protection = true
 
@@ -58,7 +58,7 @@ resource "aws_lb_target_group" "blue" {
     name     = "${var.project_name}-blue-tg"
     port     = 80
     protocol = "HTTP"
-    vpc_id   = aws_vpc.vpc.id
+    vpc_id   = var.vpc_id
     target_type = "instance"
     health_check {
         path                = "/"
@@ -77,7 +77,7 @@ resource "aws_lb_target_group" "green" {
     name     = "${var.project_name}-green-tg"
     port     = 80
     protocol = "HTTP"
-    vpc_id   = aws_vpc.vpc.id
+    vpc_id   = var.vpc_id
     target_type = "instance"
     health_check {
         path                = "/"

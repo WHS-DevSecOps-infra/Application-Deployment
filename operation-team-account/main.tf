@@ -19,6 +19,7 @@ module "iam" {
 
 module "ecr" {
     source = "./modules/ecr"
+    project_name = var.project_name
     ecr_policy_json = module.iam.ecr_policy_json
 }
 

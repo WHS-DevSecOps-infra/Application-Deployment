@@ -12,7 +12,7 @@ resource "aws_ecs_cluster" "ecs_cluster" {
 # ECS Launch Template
 resource "aws_launch_template" "ecs_launch_template" {
   name_prefix   = "${var.project_name}-ecs-launch-template-"
-  image_id      = data.golen_ami.latest_shared_ami.id
+  image_id      = "${var.golden_ami}"
   instance_type = "t2.micro"
   
   iam_instance_profile {
@@ -20,7 +20,7 @@ resource "aws_launch_template" "ecs_launch_template" {
   }
   network_interfaces {
     associate_public_ip_address = false
-    security_groups             = [aws_security_group.ecs_sg.id]
+    security_groups             = [var.ecs_security_group_id]
   }
 
     user_data = base64encode(<<-EOF
@@ -91,7 +91,7 @@ resource "aws_ecs_task_definition" "ecs_task_definition" {
     container_definitions = jsonencode([
         {
             name      = "${var.project_name}-container"
-            image     = "${data.terraform_remote_state.operation_account.outputs.ecr_repository_url}:latest"
+            image     = "${var.ecr_image_url}:latest"
             cpu       = 256
             memory    = 512
             essential = true
@@ -120,7 +120,7 @@ resource "aws_ecs_service" "ecs_service" {
     }
 
     load_balancer {
-        target_group_arn = aws_lb_target_group.blue.arn
+        target_group_arn = var.blue_target_group_arn
         container_name   = "${var.project_name}-container"
         container_port   = 80
     }

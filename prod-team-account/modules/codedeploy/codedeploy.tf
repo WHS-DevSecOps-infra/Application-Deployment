@@ -7,13 +7,13 @@ resource "aws_codedeploy_app" "ecs_app" {
 resource "aws_codedeploy_deployment_group" "ecs_deployment_group" {
   app_name = aws_codedeploy_app.ecs_app.name
   deployment_group_name = "${var.project_name}-ecs-deployment-group"
-  service_role_arn = aws_iam_role.codedeploy_role.arn
+  service_role_arn = var.codedeploy_service_role_arn
 
   deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
   
   ecs_service {
-    cluster_name = aws_ecs_cluster.ecs_cluster.name
-    service_name = aws_ecs_service.ecs_service.name
+    cluster_name = var.ecs_cluster_name
+    service_name = var.ecs_service_name
   }
 
   deployment_style {
@@ -33,13 +33,13 @@ resource "aws_codedeploy_deployment_group" "ecs_deployment_group" {
   load_balancer_info {
     target_group_pair_info {
       target_group {
-        name = aws_lb_target_group.blue.name
+        name = var.blue_target_group_name
       }
       target_group {
-        name = aws_lb_target_group.green.name
+        name = var.green_target_group_name
       }
       prod_traffic_route {
-        listener_arns = [aws_lb_listener.http.arn]
+        listener_arns = [var.alb_listener_arn]
       }
     }
   }
