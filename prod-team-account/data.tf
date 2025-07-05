@@ -6,3 +6,12 @@ data "terraform_remote_state" "operation_account" {
     region = "ap-northeast-2"
   }
 }
+
+data "golen_ami" "latest_shared_ami" {
+    most_recent = true
+    owners      = [var.ami_owner_id] # operation-team-account의 AMI 
+    filter {
+        name   = "name"
+        values = ["WHS-CloudFence-*"]
+    }
+}
