@@ -1,3 +1,9 @@
+# iam에서 생성한 ARN 변수 전달
+variable "ecs_task_execution_role_arn" {
+  type        = string
+  description = "The ARN of the ECS Task Execution Role"
+}
+
 # ECS 클러스터 생성
 resource "aws_ecs_cluster" "ecs_cluster" {
   name = "${var.project_name}-ecs-cluster"
@@ -80,6 +86,7 @@ resource "aws_ecs_task_definition" "ecs_task_definition" {
     family                   = "${var.project_name}-ecs-task"
     network_mode             = "bridge"
     requires_compatibilities = ["EC2"]
+    execution_role_arn       = var.ecs_task_execution_role_arn
 
     container_definitions = jsonencode([
         {
