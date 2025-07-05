@@ -10,6 +10,7 @@ provider "aws" {
   region = "ap-northeast-2"
 }
 
+
 # S3 버킷 생성
 resource "aws_s3_bucket" "tfstate_app" {
   bucket = "cloudfence-tfstate-app" 
@@ -81,8 +82,8 @@ resource "aws_dynamodb_table" "lock_app" {
     Name        = "Terraform Lock Table"
     Environment = "application-deployment"
   }
-<<<<<<< HEAD
 }
-=======
+
 }
->>>>>>> origin/main
+
+
