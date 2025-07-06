@@ -1,8 +1,9 @@
 terraform {
   backend "s3" {
-    bucket         = "cloudfence-tfstate-app"
+    bucket         = "cloudfence-operation-state"
     key            = "operation-team-account/ecr/terraform.tfstate"
     region         = "ap-northeast-2"
-    dynamodb_table = "tfstate-lock-app"
+    dynamodb_table = "s3-operation-lock"
+    encrypt        = true
   }
 }
