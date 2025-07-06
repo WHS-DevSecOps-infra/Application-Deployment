@@ -1,4 +1,4 @@
-# CI/CD workflow test
+# CI/CD workflow Test
 terraform {
     required_providers {
       aws = {
@@ -75,7 +75,7 @@ resource "aws_ecs_cluster" "ecs_cluster" {
 # ECS Launch Template
 resource "aws_launch_template" "ecs_launch_template" {
   name_prefix   = "${var.project_name}-ecs-launch-template-"
-  image_id      = "${var.golden_ami}"
+  image_id      = "${data.aws_ami.latest_shared_ami.id}"
   instance_type = "t2.micro"
   
   iam_instance_profile {
