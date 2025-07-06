@@ -1,3 +1,26 @@
+terraform {
+    required_providers {
+      aws = {
+        source  = "hashicorp/aws"
+        version = "~> 5.0"
+      }
+    }
+    
+}
+
+provider "aws" {
+  region = "ap-northeast-2"
+}
+
+data "terraform_remote_state" "vpc" {
+  backend = "s3"
+  config = {
+    bucket         = "cloudfence-prod-state"
+    key            = "prod-team-account/vpc/terraform.tfstate"
+    region         = "ap-northeast-2"
+  }
+}
+
 # WAF
 resource "aws_wafv2_web_acl" "alb_waf" {
   name        = "${var.project_name}-alb-waf"
@@ -43,8 +66,8 @@ resource "aws_lb" "alb" {
     name               = "${var.project_name}-alb"
     internal           = false
     load_balancer_type = "application"
-    security_groups    = [aws_security_group.alb_sg.id]
-    subnets            = [aws_subnet.public1.id, aws_subnet.public2.id]
+    security_groups    = [data.terraform_remote_state.vpc.outputs.alb_security_group_id]
+    subnets            = data.terraform_remote_state.vpc.outputs.public_subnet_ids
 
     enable_deletion_protection = true
 
@@ -58,7 +81,7 @@ resource "aws_lb_target_group" "blue" {
     name     = "${var.project_name}-blue-tg"
     port     = 80
     protocol = "HTTP"
-    vpc_id   = aws_vpc.vpc.id
+    vpc_id   = data.terraform_remote_state.vpc.outputs.vpc_id
     target_type = "instance"
     health_check {
         path                = "/"
@@ -77,7 +100,7 @@ resource "aws_lb_target_group" "green" {
     name     = "${var.project_name}-green-tg"
     port     = 80
     protocol = "HTTP"
-    vpc_id   = aws_vpc.vpc.id
+    vpc_id   = data.terraform_remote_state.vpc.outputs.vpc_id
     target_type = "instance"
     health_check {
         path                = "/"

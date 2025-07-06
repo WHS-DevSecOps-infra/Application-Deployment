@@ -1,3 +1,21 @@
+terraform {
+    required_providers {
+      aws = {
+        source  = "hashicorp/aws"
+        version = "~> 5.0"
+      }
+    }
+    
+}
+
+provider "aws" {
+  region = "ap-northeast-2"
+}
+
+data "aws_iam_role" "github_actions_role" {
+  name = "Application-Deployment-role2" 
+}
+
 # ECS 인스턴스가 사용할 IAM 역할 생성
 resource "aws_iam_role" "ecs_instance_role" {
   name = "${var.project_name}-ecs-instance-role"
@@ -56,8 +74,6 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-
-
 # CodeDeploy를 위한 IAM 역할
 resource "aws_iam_role" "codedeploy_role" {
   name = "${var.project_name}-codedeploy-role"
@@ -78,4 +94,3 @@ resource "aws_iam_role_policy_attachment" "codedeploy_role_attachment" {
   role       = aws_iam_role.codedeploy_role.name
   policy_arn = "arn:aws:iam::aws:policy/AWSCodeDeployRoleForECS"
 }
-

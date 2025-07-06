@@ -1,0 +1,154 @@
+name: Terraform Apply
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set.outputs.matrix }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Filter Paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            operation:
+              - 'operation-team-account/**'
+            identity:
+              - 'identity-team-account/**'
+            prod:
+              - 'prod-team-account/**'
+            dev:
+              - 'dev-team-account/**'
+            security:
+              - 'security-team-account/**'
+            stage:
+              - 'stage-team-account/**'
+            management:
+              - 'management-team-account/**'
+
+      - name: Build Matrix from Filter (with subdirs)
+        id: set
+        env:
+          FILTER_OUTPUTS_operation: ${{ steps.filter.outputs.operation }}
+          FILTER_OUTPUTS_identity: ${{ steps.filter.outputs.identity }}
+          FILTER_OUTPUTS_prod: ${{ steps.filter.outputs.prod }}
+          FILTER_OUTPUTS_dev: ${{ steps.filter.outputs.dev }}
+          FILTER_OUTPUTS_security: ${{ steps.filter.outputs.security }}
+          FILTER_OUTPUTS_stage: ${{ steps.filter.outputs.stage }}
+          FILTER_OUTPUTS_management: ${{ steps.filter.outputs.management }}
+        run: |
+          declare -A ROLE_MAP=(
+            ["operation"]="ROLE_ARN_OPERATION"
+            ["identity"]="ROLE_ARN_IDENTITY"
+            ["prod"]="ROLE_ARN_PROD"
+            ["dev"]="ROLE_ARN_DEV"
+            ["security"]="ROLE_ARN_SECURITY"
+            ["stage"]="ROLE_ARN_STAGE"
+            ["management"]="ROLE_ARN_MANAGEMENT"
+          )
+
+          declare -A DEPENDENCY_MAP=(
+            ["prod-team-account/vpc"]=""
+            ["prod-team-account/iam"]=""
+            ["operation-team-account/ecr"]="prod-team-account/iam"
+            ["prod-team-account/alb"]="prod-team-account/vpc"
+            ["prod-team-account/ecs"]="prod-team-account/vpc prod-team-account/iam prod-team-account/alb operation-team-account/ecr"
+            ["prod-team-account/codedeploy"]="prod-team-account/ecs"
+          )
+
+          # Push 이벤트에 포함된 변경된 파일 목록을 호출
+          echo "Comparing changes between ${{ github.event.before }} and ${{ github.event.after }}"
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }})
+          
+          # 변경된 파일이 속한 서비스 폴더(backend.tf가 있는 폴더) 목록 검색
+          CHANGED_DIRS=()
+          for file in $CHANGED_FILES; do
+            dir=$(dirname "$file")
+            while [ "$dir" != "." ]; do
+              if [ -f "$dir/backend.tf" ]; then
+                CHANGED_DIRS+=("$dir"); break;
+              fi;
+              dir=$(dirname "$dir");
+            done
+          done
+          CHANGED_DIRS=($(echo "${CHANGED_DIRS[@]}" | tr ' ' '\n' | sort -u))
+          
+          if [ ${#CHANGED_DIRS[@]} -eq 0 ]; then
+            echo "No terraform project directories with changes found."; echo "matrix=[]" >> $GITHUB_OUTPUT; exit 0;
+          fi
+          echo "Changed project directories: ${CHANGED_DIRS[@]}"
+
+          # 변경된 폴더와 정의된 의존성을 기반으로 배포 순서를 결정
+          TSORT_INPUT=""
+          ALL_DIRS_TO_CONSIDER="${CHANGED_DIRS[@]}"
+          for DIR in "${CHANGED_DIRS[@]}"; do
+            dependencies=${DEPENDENCY_MAP[$DIR]}
+            for DEP in $dependencies; do
+              TSORT_INPUT+="$DEP $DIR\n"; ALL_DIRS_TO_CONSIDER+=" $DEP";
+            done
+          done
+          ALL_DIRS_TO_CONSIDER=($(echo "$ALL_DIRS_TO_CONSIDER" | tr ' ' '\n' | sort -u))
+          
+          ORDERED_DIRS=$(echo -e "$TSORT_INPUT" | tsort 2>/dev/null || echo "$ALL_DIRS_TO_CONSIDER")
+          echo "Calculated execution order: $ORDERED_DIRS"
+
+          # 실행할 최종 매트릭스를 JSON 형식으로 생성
+          MATRIX_ITEMS=()
+          for DIR in $ORDERED_DIRS; do
+            if [[ " ${CHANGED_DIRS[@]} " =~ " ${DIR} " ]]; then
+              ACCOUNT_PREFIX=$(echo $DIR | cut -d- -f1)
+              ROLE_KEY="${ROLE_MAP[$ACCOUNT_PREFIX]}"
+              MATRIX_ITEMS+=("{\"dir\":\"$DIR\",\"role_key\":\"$ROLE_KEY\"}")
+            fi
+          done
+
+          if [ ${#MATRIX_ITEMS[@]} -eq 0 ]; then
+            echo "matrix=[]" >> $GITHUB_OUTPUT
+          else
+            JSON="[$(IFS=,; echo "${MATRIX_ITEMS[*]}")]"; echo "matrix=$JSON" >> $GITHUB_OUTPUT;
+          fi
+
+  terraform-apply:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.matrix != '[]' }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: true
+      max-parallel: 1
+      matrix:
+        include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: ap-northeast-2
+          role-to-assume: ${{ secrets[matrix.role_key] }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v1
+        with:
+          terraform_version: 1.4.0
+
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ${{ matrix.dir }}
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
+        working-directory: ${{ matrix.dir }}

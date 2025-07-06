@@ -1,3 +1,17 @@
+terraform {
+    required_providers {
+      aws = {
+        source  = "hashicorp/aws"
+        version = "~> 5.0"
+      }
+    }
+    
+}
+
+provider "aws" {
+  region = "ap-northeast-2"
+}
+
 # VPC
 resource "aws_vpc" "vpc" {
   cidr_block = var.vpc_cidr
@@ -118,4 +132,49 @@ resource "aws_route_table_association" "private1" {
 resource "aws_route_table_association" "private2" {
     subnet_id      = aws_subnet.private2.id
     route_table_id = aws_route_table.private.id
+}
+
+# security_group
+resource "aws_security_group" "alb_sg" {
+  name        = "${var.project_name}-alb-sg"
+  description = "Security group for ALB"
+  vpc_id      = aws_vpc.vpc.id
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow HTTP"
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1" 
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+}
+
+# ECS
+resource "aws_security_group" "ecs_sg" {
+    name        = "${var.project_name}-ecs-sg"
+    description = "Security group for ECS tasks"
+    vpc_id      = aws_vpc.vpc.id
+
+    ingress {
+      from_port   = 80
+      to_port     = 80
+      protocol    = "tcp"
+      security_groups = [aws_security_group.alb_sg.id]
+    }
+
+    egress {
+      from_port   = 0
+      to_port     = 0
+      protocol    = "-1" 
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+
 }
