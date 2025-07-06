@@ -85,6 +85,35 @@ jobs:
             fi
           done
 
+          # 각 폴더의 의존성(terraform_remote_state)을 분석
+          TSORT_INPUT=""
+          ALL_DIRS="${MATRIX_ITEMS[@]}"
+          for DIR in "${MATRIX_ITEMS[@]}"; do
+            # key "..." 형식의 remote_state 경로를 찾아서 폴더 경로로 변환
+            dependencies=$(grep -r 'key\s*=' "$DIR" | sed -E 's/.*key\s*=\s*"(.*)\/terraform.tfstate".*/\1/' | sed -E 's|/|-team-account/|' || true)
+            for DEP in $dependencies; do
+              # 의존성 관계를 "의존대상 현재폴더" 형식으로 추가
+              TSORT_INPUT+="$DEP $DIR\n"
+              ALL_DIRS+=" $DEP"
+            done
+          done
+          ALL_DIRS=$(echo "$ALL_DIRS" | tr ' ' '\n' | sort -u)
+
+          # tsort로 올바른 배포 순서를 결정
+          ORDERED_DIRS=$(echo -e "$TSORT_INPUT" | tsort 2>/dev/null || echo "$ALL_DIRS")
+          echo "Execution order: $ORDERED_DIRS"
+
+          # 실행할 최종 매트릭스를 JSON 형식으로 생성
+          MATRIX_ITEMS=()
+          for DIR in $ORDERED_DIRS; do
+            # 변경된 폴더 목록에 있는 디렉토리만 최종 매트릭스에 포함시킵니다.
+            if [[ " ${MATRIX_ITEMS[@]} " =~ " ${DIR} " ]]; then
+              ACCOUNT_PREFIX=$(echo $DIR | cut -d- -f1)
+              ROLE_KEY="${ROLE_MAP[$ACCOUNT_PREFIX]}"
+              MATRIX_ITEMS+=("{\"dir\":\"$DIR\",\"role_key\":\"$ROLE_KEY\"}")
+            fi
+          done
+
           if [ ${#MATRIX_ITEMS[@]} -eq 0 ]; then
             echo "matrix=[]" >> $GITHUB_OUTPUT
           else
