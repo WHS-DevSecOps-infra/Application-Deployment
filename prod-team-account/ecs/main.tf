@@ -1,4 +1,4 @@
-# CI/CD workflow Test
+# CI/CD Test
 terraform {
     required_providers {
       aws = {
@@ -51,7 +51,7 @@ data "terraform_remote_state" "ecr" {
 
 data "aws_ami" "latest_shared_ami" {
     most_recent = true
-    owners      = [var.ami_owner_id] # operation-team-account의 AMI 
+    owners      = [var.ami_owner_account_id] # operation-team-account의 AMI 
     filter {
         name   = "name"
         values = ["WHS-CloudFence-*"]
@@ -145,7 +145,7 @@ resource "aws_ecs_task_definition" "ecs_task_definition" {
     container_definitions = jsonencode([
         {
             name      = "${var.project_name}-container"
-            image     = "${data.terraform_remote_state.ecr.outputs.image_url}:latest"
+            image     = "${data.terraform_remote_state.ecr.outputs.repository_url}:latest"
             cpu       = 256
             memory    = 512
             essential = true
