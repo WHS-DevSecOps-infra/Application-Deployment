@@ -16,8 +16,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
 
       - name: Filter Paths
         id: filter
@@ -60,53 +58,52 @@ jobs:
             ["management"]="ROLE_ARN_MANAGEMENT"
           )
 
-          # 변경된 모든 서비스 폴더(backend.tf가 있는 폴더)를 찾습니다.
-          CHANGED_DIRS=()
-          # main 브랜치와 현재 커밋(HEAD) 사이의 변경된 파일 목록을 가져옵니다.
-          CHANGED_FILES=$(git diff --name-only origin/main HEAD)
+          declare -A DEPENDENCY_MAP=(
+            ["operation-team-account/ecr"]=""
+            ["prod-team-account/vpc"]=""
+            ["prod-team-account/iam"]=""
+            ["prod-team-account/alb"]="prod-team-account/vpc"
+            ["prod-team-account/ecs"]="prod-team-account/vpc prod-team-account/iam prod-team-account/alb operation-team-account/ecr"
+            ["prod-team-account/codedeploy"]="prod-team-account/ecs"
+          )
+
+          # Push 이벤트에 포함된 변경된 파일 목록을 호출
+          echo "Comparing changes between ${{ github.event.before }} and ${{ github.event.after }}"
+          CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.event.after }})
           
-          for KEY in "${!ROLE_MAP[@]}"; do
-            VAR_NAME="FILTER_OUTPUTS_${KEY}"
-            VALUE="${!VAR_NAME}"
-            # paths-filter가 해당 계정에 변경이 있다고 감지한 경우에만 실행합니다.
-            if [ "$VALUE" = "true" ]; then
-              BASE_DIR="${KEY}-team-account"
-              # 해당 계정 폴더 내에서 backend.tf를 가진 모든 하위 폴더를 찾습니다.
-              for DIR in $(find "$BASE_DIR" -name 'backend.tf' -exec dirname {} \;); do
-                # 그 폴더가 실제 변경된 파일 목록에 포함되는지 확인합니다.
-                if echo "$CHANGED_FILES" | grep -q "^$DIR/"; then
-                  CHANGED_DIRS+=("$DIR")
-                fi
-              done
-            fi
-          done
-
-          # 중복 제거 및 최종 변경 목록 확인
-          CHANGED_DIRS=($(echo "${CHANGED_DIRS[@]}" | tr ' ' '\n' | sort -u))
-          if [ ${#CHANGED_DIRS[@]} -eq 0 ]; then
-            echo "No terraform directories with changes found."
-            echo "matrix=[]" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          echo "Changed directories to be processed: ${CHANGED_DIRS[@]}"
-
-          # 각 폴더의 의존성(terraform_remote_state)을 분석하여 배포 순서를 결정합니다.
-          TSORT_INPUT=""
-          ALL_DIRS="${CHANGED_DIRS[@]}"
-          for DIR in "${CHANGED_DIRS[@]}"; do
-            dependencies=$(grep -r 'key\s*=' "$DIR" | sed -E 's/.*key\s*=\s*"(.*)\/terraform.tfstate".*/\1/' | sed -E 's|/|-team-account/|' || true)
-            for DEP in $dependencies; do
-              TSORT_INPUT+="$DEP $DIR\n"
-              ALL_DIRS+=" $DEP"
+          # 변경된 파일이 속한 서비스 폴더(backend.tf가 있는 폴더) 목록 검색
+          CHANGED_DIRS=()
+          for file in $CHANGED_FILES; do
+            dir=$(dirname "$file")
+            while [ "$dir" != "." ]; do
+              if [ -f "$dir/backend.tf" ]; then
+                CHANGED_DIRS+=("$dir"); break;
+              fi;
+              dir=$(dirname "$dir");
             done
           done
-          ALL_DIRS=$(echo "$ALL_DIRS" | tr ' ' '\n' | sort -u)
+          CHANGED_DIRS=($(echo "${CHANGED_DIRS[@]}" | tr ' ' '\n' | sort -u))
+          
+          if [ ${#CHANGED_DIRS[@]} -eq 0 ]; then
+            echo "No terraform project directories with changes found."; echo "matrix=[]" >> $GITHUB_OUTPUT; exit 0;
+          fi
+          echo "Changed project directories: ${CHANGED_DIRS[@]}"
 
-          # tsort로 올바른 배포 순서를 결정합니다.
-          ORDERED_DIRS=$(echo -e "$TSORT_INPUT" | tsort 2>/dev/null || echo "$ALL_DIRS")
+          # 변경된 폴더와 정의된 의존성을 기반으로 배포 순서를 결정
+          TSORT_INPUT=""
+          ALL_DIRS_TO_CONSIDER="${CHANGED_DIRS[@]}"
+          for DIR in "${CHANGED_DIRS[@]}"; do
+            dependencies=${DEPENDENCY_MAP[$DIR]}
+            for DEP in $dependencies; do
+              TSORT_INPUT+="$DEP $DIR\n"; ALL_DIRS_TO_CONSIDER+=" $DEP";
+            done
+          done
+          ALL_DIRS_TO_CONSIDER=($(echo "$ALL_DIRS_TO_CONSIDER" | tr ' ' '\n' | sort -u))
+          
+          ORDERED_DIRS=$(echo -e "$TSORT_INPUT" | tsort 2>/dev/null || echo "$ALL_DIRS_TO_CONSIDER")
           echo "Calculated execution order: $ORDERED_DIRS"
 
-          # 실행할 최종 매트릭스를 JSON 형식으로 생성합니다.
+          # 실행할 최종 매트릭스를 JSON 형식으로 생성
           MATRIX_ITEMS=()
           for DIR in $ORDERED_DIRS; do
             if [[ " ${CHANGED_DIRS[@]} " =~ " ${DIR} " ]]; then
@@ -119,8 +116,7 @@ jobs:
           if [ ${#MATRIX_ITEMS[@]} -eq 0 ]; then
             echo "matrix=[]" >> $GITHUB_OUTPUT
           else
-            JSON="[$(IFS=,; echo "${MATRIX_ITEMS[*]}")]"
-            echo "matrix=$JSON" >> $GITHUB_OUTPUT
+            JSON="[$(IFS=,; echo "${MATRIX_ITEMS[*]}")]"; echo "matrix=$JSON" >> $GITHUB_OUTPUT;
           fi
 
   terraform-apply:
@@ -129,9 +125,10 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: true
+      max-parallel: 1
       matrix:
         include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
-      fail-fast: false
 
     steps:
       - name: Checkout repository
