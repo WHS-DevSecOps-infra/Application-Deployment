@@ -1,4 +1,4 @@
-# CI/CD test
+# CI/CD Test
 terraform {
     required_providers {
       aws = {

@@ -145,7 +145,7 @@ resource "aws_ecs_task_definition" "ecs_task_definition" {
     container_definitions = jsonencode([
         {
             name      = "${var.project_name}-container"
-            image     = "${data.terraform_remote_state.ecr.outputs.image_url}:latest"
+            image     = "${data.terraform_remote_state.ecr.outputs.repository_url}:latest"
             cpu       = 256
             memory    = 512
             essential = true
