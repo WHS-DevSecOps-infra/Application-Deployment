@@ -7,4 +7,5 @@ variable "project_name" {
 variable "vpc_id" {
   description = "The ID of the VPC where the ECS cluster will be deployed"
   type        = string
+  default     = "cloudfence-vpc"
 }
