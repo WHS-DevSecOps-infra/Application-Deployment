@@ -71,14 +71,6 @@ resource "aws_iam_role_policy_attachment" "ecs_task_execution_role_attachment" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
-# ECS 작업 실행 역할의 ARN 출력
-# 다른 리소스에서 이 ARN을 참조할 수 있도록 출력 변수 설정
-output "ecs_task_execution_role_arn" {
-    description = "ARN of the ECS Task Execution Role"
-    value       = aws_iam_role.ecs_task_execution_role.arn
-}
-
-
 # CodeDeploy를 위한 IAM 역할
 resource "aws_iam_role" "codedeploy_role" {
   name = "${var.project_name}-codedeploy-role"
