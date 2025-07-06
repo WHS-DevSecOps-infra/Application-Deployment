@@ -109,7 +109,6 @@ jobs:
               ROLE_KEY="${ROLE_MAP[$ACCOUNT_PREFIX]}"
               MATRIX_ITEMS+=("{\"dir\":\"$DIR\",\"role_key\":\"$ROLE_KEY\"}")
 
-
               # 루트 디렉터리 검사
               TF_COUNT_ROOT=$(find "$BASE_DIR" -maxdepth 1 -name '*.tf' | wc -l)
               if [ "$TF_COUNT_ROOT" -gt 0 ]; then
@@ -142,23 +141,10 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
-<<<<<<< HEAD
       fail-fast: true
       max-parallel: 1
       matrix:
         include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
-=======
-<<<<<<< HEAD
-      matrix: # matrix 기반 반복 실행
-        include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
-      fail-fast: false # 하나 실패해도 나머지 job은 계속 진행
-=======
-      fail-fast: true
-      max-parallel: 1
-      matrix:
-        include: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
->>>>>>> 1d0cceb (CI/CD Test)
->>>>>>> cac750c (CI/CD Test)
 
     steps:
       - name: Checkout repository
