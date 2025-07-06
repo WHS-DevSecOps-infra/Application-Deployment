@@ -1,3 +1,4 @@
+# CI/CD Test
 # CodeDeploy
 resource "aws_codedeploy_app" "ecs_app" {
   name = "${var.project_name}-ecs-app"

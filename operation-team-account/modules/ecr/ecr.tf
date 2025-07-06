@@ -1,3 +1,4 @@
+# CI/CD Test
 # iam.tf에서 만든 정책 JSON을 받을 변수 선언
 variable "ecr_policy_json" {
   type        = string

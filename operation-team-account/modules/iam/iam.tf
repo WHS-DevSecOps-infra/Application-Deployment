@@ -1,3 +1,4 @@
+# CI/CD Test
 # prod-team-account의 역할 ARN을 변수로 받기
 variable "prod_github_actions_role_arn" {
   type        = string

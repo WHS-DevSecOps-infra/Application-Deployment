@@ -1,3 +1,4 @@
+# CI/CD Test
 # ECS 인스턴스가 사용할 IAM 역할 생성
 resource "aws_iam_role" "ecs_instance_role" {
   name = "${var.project_name}-ecs-instance-role"

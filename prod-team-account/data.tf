@@ -1,3 +1,4 @@
+# CI/CD Test
 data "terraform_remote_state" "operation_account" {
   backend = "s3" # operation-team-account의 state가 저장된 백엔드
   config = {
