@@ -1,4 +1,18 @@
 # CI/CD Test
+terraform {
+    required_providers {
+      aws = {
+        source  = "hashicorp/aws"
+        version = "~> 5.0"
+      }
+    }
+    
+}
+
+provider "aws" {
+  region = "ap-northeast-2"
+}
+
 # ECS 인스턴스가 사용할 IAM 역할 생성
 resource "aws_iam_role" "ecs_instance_role" {
   name = "${var.project_name}-ecs-instance-role"

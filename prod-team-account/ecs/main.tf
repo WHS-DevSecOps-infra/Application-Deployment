@@ -1,8 +1,70 @@
 # CI/CD Test
-# iam에서 생성한 ARN 변수 전달
-variable "ecs_task_execution_role_arn" {
-  type        = string
-  description = "The ARN of the ECS Task Execution Role"
+terraform {
+    required_providers {
+      aws = {
+        source  = "hashicorp/aws"
+        version = "~> 5.0"
+      }
+    }
+    
+}
+
+provider "aws" {
+  region = "ap-northeast-2"
+}
+
+data "terraform_remote_state" "vpc" {
+  backend = "s3"
+  config = {
+    bucket = "cloudfence-tfstate-app"
+    key    = "prod-team-account/vpc/terraform.tfstate"
+    region = "ap-northeast-2"
+  }
+}
+
+data "terraform_remote_state" "alb" {
+  backend = "s3"
+  config = {
+    bucket = "cloudfence-tfstate-app"
+    key    = "prod-team-account/alb/terraform.tfstate"
+    region = "ap-northeast-2"
+  }
+}
+
+data "terraform_remote_state" "iam" {
+  backend = "s3"
+  config = {
+    bucket = "cloudfence-tfstate-app"
+    key    = "prod-team-account/iam/terraform.tfstate"
+    region = "ap-northeast-2"
+  }
+}
+
+data "terraform_remote_state" "ecs" {
+  backend = "s3"
+  config = {
+    bucket = "cloudfence-tfstate-app"
+    key    = "prod-team-account/ecs/terraform.tfstate"
+    region = "ap-northeast-2"
+  }
+}
+
+data "aws_ami" "latest_shared_ami" {
+    most_recent = true
+    owners      = [var.ami_owner_id] # operation-team-account의 AMI 
+    filter {
+        name   = "name"
+        values = ["WHS-CloudFence-*"]
+    }
+}
+
+data "terraform_remote_state" "ecr" {
+    backend = "s3"
+    config = {
+        bucket = "cloudfence-tfstate-app"
+        key    = "operation-team-account/ecr/terraform.tfstate"
+        region = "ap-northeast-2"
+    }
 }
 
 # ECS 클러스터 생성
@@ -17,11 +79,11 @@ resource "aws_launch_template" "ecs_launch_template" {
   instance_type = "t2.micro"
   
   iam_instance_profile {
-    name = aws_iam_instance_profile.ecs_instance_profile.name
+    name = data.terraform_remote_state.iam.outputs.ecs_instance_profile_name
   }
   network_interfaces {
     associate_public_ip_address = false
-    security_groups             = [var.ecs_security_group_id]
+    security_groups             = [data.terraform_remote_state.vpc.outputs.ecs_security_group_id]
   }
 
     user_data = base64encode(<<-EOF
@@ -45,7 +107,7 @@ resource "aws_autoscaling_group" "ecs_auto_scaling_group" {
   min_size                  = 1
   max_size                  = 4
   desired_capacity          = 2
-  vpc_zone_identifier      = [aws_subnet.private1.id, aws_subnet.private2.id]
+  vpc_zone_identifier      = [for subnet in data.terraform_remote_state.vpc.outputs.private_subnet_ids : subnet]
   health_check_type        = "EC2"
   force_delete              = true
   protect_from_scale_in   = true
@@ -87,12 +149,12 @@ resource "aws_ecs_task_definition" "ecs_task_definition" {
     family                   = "${var.project_name}-ecs-task"
     network_mode             = "bridge"
     requires_compatibilities = ["EC2"]
-    execution_role_arn       = var.ecs_task_execution_role_arn
+    execution_role_arn       = data.terraform_remote_state.iam.outputs.ecs_task_execution_role_arn
 
     container_definitions = jsonencode([
         {
             name      = "${var.project_name}-container"
-            image     = "${var.ecr_image_url}:latest"
+            image     = "${data.terraform_remote_state.ecr.outputs.image_url}:latest"
             cpu       = 256
             memory    = 512
             essential = true
@@ -121,7 +183,7 @@ resource "aws_ecs_service" "ecs_service" {
     }
 
     load_balancer {
-        target_group_arn = var.blue_target_group_arn
+        target_group_arn = data.terraform_remote_state.alb.outputs.blue_target_group_arn
         container_name   = "${var.project_name}-container"
         container_port   = 80
     }
