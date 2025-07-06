@@ -58,15 +58,6 @@ data "aws_ami" "latest_shared_ami" {
     }
 }
 
-data "terraform_remote_state" "ecr" {
-    backend = "s3"
-    config = {
-        bucket = "cloudfence-prod-state"
-        key    = "operation-team-account/ecr/terraform.tfstate"
-        region = "ap-northeast-2"
-    }
-}
-
 # ECS 클러스터 생성
 resource "aws_ecs_cluster" "ecs_cluster" {
   name = "${var.project_name}-ecs-cluster"
