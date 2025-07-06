@@ -1,4 +1,4 @@
-# CI/CD workflowTest
+# CI/CD woTest
 terraform {
     required_providers {
       aws = {
@@ -11,6 +11,10 @@ terraform {
 
 provider "aws" {
   region = "ap-northeast-2"
+}
+
+data "aws_iam_role" "github_actions_role" {
+  name = "Application-Deployment-role2" 
 }
 
 # ECS 인스턴스가 사용할 IAM 역할 생성

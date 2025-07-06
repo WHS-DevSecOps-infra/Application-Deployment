@@ -13,6 +13,15 @@ provider "aws" {
   region = "ap-northeast-2"
 }
 
+data "terraform_remote_state" "iam" {
+  backend = "s3"
+  config = {
+    bucket = "cloudfence-tfstate-app"
+    key    = "prod-team-account/iam/terraform.tfstate"
+    region = "ap-northeast-2"
+  }
+}
+
 # operation-team-account의 ECR 리포지토리 생성 및 정책 설정
 data "aws_iam_policy_document" "ecr_repo_policy_document" {
   statement {
@@ -21,7 +30,7 @@ data "aws_iam_policy_document" "ecr_repo_policy_document" {
     principals {
       type        = "AWS"
       # prod 계정의 역할 ARN은 변수로 전달
-      identifiers = [var.prod_github_actions_role_arn]
+      identifiers = [data.terraform_remote_state.iam.outputs.github_actions_role_arn]
     }
     actions = [
       "ecr:GetDownloadUrlForLayer",

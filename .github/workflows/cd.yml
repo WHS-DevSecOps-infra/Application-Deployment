@@ -59,9 +59,9 @@ jobs:
           )
 
           declare -A DEPENDENCY_MAP=(
-            ["operation-team-account/ecr"]=""
             ["prod-team-account/vpc"]=""
             ["prod-team-account/iam"]=""
+            ["operation-team-account/ecr"]="prod-team-account/iam"
             ["prod-team-account/alb"]="prod-team-account/vpc"
             ["prod-team-account/ecs"]="prod-team-account/vpc prod-team-account/iam prod-team-account/alb operation-team-account/ecr"
             ["prod-team-account/codedeploy"]="prod-team-account/ecs"
