@@ -1,4 +1,3 @@
-# CI/CD Test.
 terraform {
     required_providers {
       aws = {
@@ -54,8 +53,8 @@ resource "aws_codedeploy_deployment_group" "ecs_deployment_group" {
   deployment_config_name = "CodeDeployDefault.ECSAllAtOnce"
   
   ecs_service {
-    cluster_name = data.terraform_remote_state.ecs.outputs.ecs_cluster_name
-    service_name = data.terraform_remote_state.ecs.outputs.ecs_service_name
+    cluster_name = data.terraform_remote_state.ecs.outputs.cluster_name
+    service_name = data.terraform_remote_state.ecs.outputs.service_name
   }
 
   deployment_style {
