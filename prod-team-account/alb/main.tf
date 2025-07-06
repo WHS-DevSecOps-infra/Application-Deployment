@@ -16,11 +16,9 @@ provider "aws" {
 data "terraform_remote_state" "vpc" {
   backend = "s3"
   config = {
-    bucket         = "cloudfence-tfstate-app"
+    bucket         = "cloudfence-prod-state"
     key            = "prod-team-account/vpc/terraform.tfstate"
     region         = "ap-northeast-2"
-    dynamodb_table = "tfstate-lock-app"
-    encrypt        = true
   }
 }
 

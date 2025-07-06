@@ -16,7 +16,7 @@ provider "aws" {
 data "terraform_remote_state" "iam" {
   backend = "s3"
   config = {
-    bucket = "cloudfence-tfstate-app"
+    bucket = "cloudfence-prod-state"
     key    = "prod-team-account/iam/terraform.tfstate"
     region = "ap-northeast-2"
   }

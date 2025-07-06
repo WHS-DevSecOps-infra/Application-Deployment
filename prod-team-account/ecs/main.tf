@@ -16,7 +16,7 @@ provider "aws" {
 data "terraform_remote_state" "vpc" {
   backend = "s3"
   config = {
-    bucket = "cloudfence-tfstate-app"
+    bucket = "cloudfence-prod-state"
     key    = "prod-team-account/vpc/terraform.tfstate"
     region = "ap-northeast-2"
   }
@@ -25,7 +25,7 @@ data "terraform_remote_state" "vpc" {
 data "terraform_remote_state" "alb" {
   backend = "s3"
   config = {
-    bucket = "cloudfence-tfstate-app"
+    bucket = "cloudfence-prod-state"
     key    = "prod-team-account/alb/terraform.tfstate"
     region = "ap-northeast-2"
   }
@@ -34,17 +34,17 @@ data "terraform_remote_state" "alb" {
 data "terraform_remote_state" "iam" {
   backend = "s3"
   config = {
-    bucket = "cloudfence-tfstate-app"
+    bucket = "cloudfence-prod-state"
     key    = "prod-team-account/iam/terraform.tfstate"
     region = "ap-northeast-2"
   }
 }
 
-data "terraform_remote_state" "ecs" {
+data "terraform_remote_state" "ecr" {
   backend = "s3"
   config = {
-    bucket = "cloudfence-tfstate-app"
-    key    = "prod-team-account/ecs/terraform.tfstate"
+    bucket = "cloudfence-operation-state"
+    key    = "operation-team-account/ecr/terraform.tfstate"
     region = "ap-northeast-2"
   }
 }
@@ -61,7 +61,7 @@ data "aws_ami" "latest_shared_ami" {
 data "terraform_remote_state" "ecr" {
     backend = "s3"
     config = {
-        bucket = "cloudfence-tfstate-app"
+        bucket = "cloudfence-prod-state"
         key    = "operation-team-account/ecr/terraform.tfstate"
         region = "ap-northeast-2"
     }
