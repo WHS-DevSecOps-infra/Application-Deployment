@@ -17,3 +17,8 @@ output "green_target_group_name" {
   description = "The name of the green target group"
   value       = aws_lb_target_group.green.name
 }
+
+output "blue_target_group_arn" {
+  description = "The ARN of the blue target group"
+  value       = aws_lb_target_group.blue.arn
+}
