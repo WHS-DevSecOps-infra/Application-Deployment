@@ -1,4 +1,4 @@
-# CI/CD workflow Test
+# CI/CD Test
 terraform {
     required_providers {
       aws = {
@@ -51,7 +51,7 @@ data "terraform_remote_state" "ecr" {
 
 data "aws_ami" "latest_shared_ami" {
     most_recent = true
-    owners      = [var.ami_owner_id] # operation-team-account의 AMI 
+    owners      = [var.ami_owner_account_id] # operation-team-account의 AMI 
     filter {
         name   = "name"
         values = ["WHS-CloudFence-*"]
