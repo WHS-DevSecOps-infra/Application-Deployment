@@ -1,4 +1,4 @@
-name: Application-Deployment CI
+name: Application-DeploymentCI
 
 
 on:
@@ -11,6 +11,7 @@ on:
       - "dev-team-account/**"
       - "security-team-account/**"
       - "stage-team-account/**"
+      - "management-team-account/**"
 
 permissions:
   contents: read
