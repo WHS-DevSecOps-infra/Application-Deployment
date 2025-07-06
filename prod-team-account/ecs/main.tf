@@ -67,7 +67,7 @@ resource "aws_ecs_cluster" "ecs_cluster" {
 resource "aws_launch_template" "ecs_launch_template" {
   name_prefix   = "${var.project_name}-ecs-launch-template-"
   image_id      = "${data.aws_ami.latest_shared_ami.id}"
-  instance_type = "t2.micro"
+  instance_type = "t3.micro"
   
   iam_instance_profile {
     name = data.terraform_remote_state.iam.outputs.ecs_instance_profile_name
