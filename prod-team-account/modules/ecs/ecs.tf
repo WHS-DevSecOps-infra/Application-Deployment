@@ -1,3 +1,4 @@
+# CI/CD Test
 # iam에서 생성한 ARN 변수 전달
 variable "ecs_task_execution_role_arn" {
   type        = string
