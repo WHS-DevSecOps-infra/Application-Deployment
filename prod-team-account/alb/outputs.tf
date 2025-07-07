@@ -5,7 +5,7 @@ output "dns_name" {
 
 output "listener_arn" {
   description = "The ARN of the ALB listener"
-  value       = aws_lb_listener.http.arn
+  value       = aws_lb_listener.https.arn
 }
 
 output "blue_target_group_name" {
