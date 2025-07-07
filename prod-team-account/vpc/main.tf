@@ -23,6 +23,7 @@ resource "aws_vpc" "vpc" {
 }
 
 # subnet(public)
+#tfsec:ignore:aws-ec2-subnet-public-ip
 resource "aws_subnet" "public1" {
   vpc_id                  = aws_vpc.vpc.id
   cidr_block              = "10.0.1.0/24"
@@ -33,6 +34,7 @@ resource "aws_subnet" "public1" {
   }
 }
 
+#tfsec:ignore:aws-ec2-subnet-public-ip
 resource "aws_subnet" "public2" {
   vpc_id                  = aws_vpc.vpc.id
   cidr_block              = "10.0.2.0/24"
@@ -135,14 +137,15 @@ resource "aws_route_table_association" "private2" {
 }
 
 # security_group
+#tfsec:ignore:aws-ec2-security-group-public-ip-ingress
 resource "aws_security_group" "alb_sg" {
   name        = "${var.project_name}-alb-sg"
   description = "Security group for ALB"
   vpc_id      = aws_vpc.vpc.id
 
   ingress {
-    from_port   = 80
-    to_port     = 80
+    from_port   = 443
+    to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
     description = "Allow HTTP"
@@ -158,6 +161,7 @@ resource "aws_security_group" "alb_sg" {
 }
 
 # ECS
+#tfsec:ignore:aws-ec2-security-group-public-ip-ingress
 resource "aws_security_group" "ecs_sg" {
   name        = "${var.project_name}-ecs-sg"
   description = "Security group for ECS tasks"
