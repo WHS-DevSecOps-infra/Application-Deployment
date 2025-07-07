@@ -71,6 +71,12 @@ resource "aws_launch_template" "ecs_launch_template" {
   iam_instance_profile {
     name = data.terraform_remote_state.iam.outputs.ecs_instance_profile_name
   }
+
+  metadata_options {
+    http_tokens   = "required" # 토큰 기반의 IMDSv2만 허용하도록 설정
+    http_endpoint = "enabled"
+  }
+
   network_interfaces {
     associate_public_ip_address = false
     security_groups             = [data.terraform_remote_state.vpc.outputs.ecs_security_group_id]
