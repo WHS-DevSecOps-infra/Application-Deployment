@@ -1,11 +1,11 @@
 terraform {
-    required_providers {
-      aws = {
-        source  = "hashicorp/aws"
-        version = "~> 5.0"
-      }
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
     }
-    
+  }
+
 }
 
 provider "aws" {
@@ -27,7 +27,7 @@ data "aws_iam_policy_document" "ecr_repo_policy_document" {
     sid    = "AllowCrossAccountPush"
     effect = "Allow"
     principals {
-      type        = "AWS"
+      type = "AWS"
       # prod 계정의 역할 ARN은 변수로 전달
       identifiers = [data.terraform_remote_state.iam.outputs.github_actions_role_arn]
     }

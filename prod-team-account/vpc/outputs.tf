@@ -9,7 +9,7 @@ output "vpc_id" {
 output "public_subnet_ids" {
   description = "A list of public subnet IDs"
   # network.tf 파일에 정의된 public 서브넷 리소스들의 id를 리스트로 묶어서 출력
-  value       = [aws_subnet.public1.id, aws_subnet.public2.id]
+  value = [aws_subnet.public1.id, aws_subnet.public2.id]
 }
 
 # Private Subnet들의 ID 목록을 출력
