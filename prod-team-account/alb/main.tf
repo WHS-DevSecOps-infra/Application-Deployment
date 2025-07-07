@@ -12,6 +12,15 @@ provider "aws" {
   region = "ap-northeast-2"
 }
 
+data "terraform_remote_state" "acm" {
+  backend = "s3"
+  config = {
+    bucket         = "cloudfence-prod-state"
+    key            = "prod-team-account/acm/terraform.tfstate"
+    region         = "ap-northeast-2"
+  }
+}
+
 data "terraform_remote_state" "vpc" {
   backend = "s3"
   config = {
@@ -69,6 +78,7 @@ resource "aws_lb" "alb" {
     security_groups    = [data.terraform_remote_state.vpc.outputs.alb_security_group_id]
     subnets            = data.terraform_remote_state.vpc.outputs.public_subnet_ids
 
+    drop_invalid_header_fields = true
     enable_deletion_protection = true
 
     tags = {
@@ -116,14 +126,30 @@ resource "aws_lb_target_group" "green" {
 }
 
 # ALB 리스너
-resource "aws_lb_listener" "http" {
+resource "aws_lb_listener" "https" {
     load_balancer_arn = aws_lb.alb.arn
-    port              = 80
-    protocol          = "HTTP"
+    port              = 443
+    protocol          = "HTTPS"
+    ssl_policy        = "ELBSecurityPolicy-2016-08"
+    certificate_arn   = data.terraform_remote_state.acm.outputs.certificate_arn
     default_action {
         type = "forward"
         target_group_arn = aws_lb_target_group.blue.arn
     }
+}
+
+resource "aws_lb_listener" "http_redirect" {
+  load_balancer_arn = aws_lb.alb.arn
+  port              = 80
+  protocol          = "HTTP"
+  default_action {
+    type = "redirect"
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
+  }
 }
 
 # WAF와 ALB 연결
