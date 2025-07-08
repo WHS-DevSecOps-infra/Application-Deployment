@@ -16,3 +16,4 @@
 *.tfstate.backup.*
 *.tfstate.backup.json
 *.tfstate.backup.json.*
+.terraform.lock.hcl

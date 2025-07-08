@@ -62,11 +62,11 @@ jobs:
             ["prod-team-account/vpc"]=""
             ["prod-team-account/iam"]=""
             ["prod-team-account/acm"]=""
-            ["operation-team-account/ecr"]="prod-team-account/iam"
-            ["prod-team-account/alb"]="prod-team-account/vpc prod-team-account/acm"
-            ["prod-team-account/ecs"]="prod-team-account/vpc prod-team-account/iam prod-team-account/alb operation-team-account/ecr"
-            ["prod-team-account/codedeploy"]="prod-team-account/ecs"
-          )
+            ["operation-team-account/ecr"]="prod-team-account/deploy/iam"
+            ["prod-team-account/alb"]="prod-team-account/deploy/vpc prod-team-account/deploy/acm"
+            ["prod-team-account/ecs"]="prod-team-account/deploy/vpc prod-team-account/deploy/iam prod-team-account/deploy/alb operation-team-account/deploy/ecr"
+            ["prod-team-account/codedeploy"]="prod-team-account/deploy/ecs"
+          )ㅜ
 
           # Push 이벤트에 포함된 변경된 파일 목록을 호출
           echo "Comparing changes between ${{ github.event.before }} and ${{ github.event.after }}"
