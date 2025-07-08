@@ -23,7 +23,8 @@ resource "aws_vpc" "vpc" {
 }
 
 # subnet(public)
-#tfsec:ignore:aws-ec2-subnet-public-ip
+# public 서브넷은 외부에서 접근 가능하도록 tfsec 경고 무시
+#tfsec:ignore:aws-ec2-no-public-ip-subnet
 resource "aws_subnet" "public1" {
   vpc_id                  = aws_vpc.vpc.id
   cidr_block              = "10.0.1.0/24"
@@ -34,7 +35,7 @@ resource "aws_subnet" "public1" {
   }
 }
 
-#tfsec:ignore:aws-ec2-subnet-public-ip
+#tfsec:ignore:aws-ec2-no-public-ip-subnet
 resource "aws_subnet" "public2" {
   vpc_id                  = aws_vpc.vpc.id
   cidr_block              = "10.0.2.0/24"
@@ -137,7 +138,8 @@ resource "aws_route_table_association" "private2" {
 }
 
 # security_group
-#tfsec:ignore:aws-ec2-security-group-public-ip-ingress
+# ALB를 위한 security group에서는 외부 사용자를위해 HTTP(443) 포트만 열고 이후 tfsec 경고 무시
+#tfsec:ignore:aws-ec2-no-public-ingress-sgr
 resource "aws_security_group" "alb_sg" {
   name        = "${var.project_name}-alb-sg"
   description = "Security group for ALB"
@@ -155,13 +157,14 @@ resource "aws_security_group" "alb_sg" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    destination_security_group_id = aws_security_group.ecs_sg.id
   }
 
 }
 
 # ECS
-#tfsec:ignore:aws-ec2-security-group-public-ip-ingress
+# ECS의 security group은 ALB에서 오는 트래픽만 허용하고, 외부로의 모든 트래픽을 허용하므로 tfsec 경고 무시
+#tfsec:ignore:aws-ec2-no-public-egress-sgr
 resource "aws_security_group" "ecs_sg" {
   name        = "${var.project_name}-ecs-sg"
   description = "Security group for ECS tasks"

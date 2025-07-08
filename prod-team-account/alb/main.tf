@@ -15,9 +15,9 @@ provider "aws" {
 data "terraform_remote_state" "acm" {
   backend = "s3"
   config = {
-    bucket         = "cloudfence-prod-state"
-    key            = "prod-team-account/acm/terraform.tfstate"
-    region         = "ap-northeast-2"
+    bucket = "cloudfence-prod-state"
+    key    = "prod-team-account/acm/terraform.tfstate"
+    region = "ap-northeast-2"
   }
 }
 
@@ -71,7 +71,8 @@ resource "aws_wafv2_web_acl" "alb_waf" {
 }
 
 # ALB
-#tfsec:ignore:aws-alb-not-public
+# 외부 사용자를 위한 로드 밸런서이므로 외부에 노출해야해서 tfsec 경고 무시
+#tfsec:ignore:aws-elb-alb-not-public
 resource "aws_lb" "alb" {
   name               = "${var.project_name}-alb"
   internal           = false
@@ -80,8 +81,8 @@ resource "aws_lb" "alb" {
   subnets            = data.terraform_remote_state.vpc.outputs.public_subnet_ids
 
 
-    drop_invalid_header_fields = true
-    enable_deletion_protection = true
+  drop_invalid_header_fields = true
+  enable_deletion_protection = true
 
 
   tags = {
@@ -129,17 +130,16 @@ resource "aws_lb_target_group" "green" {
 }
 
 # ALB 리스너
-
 resource "aws_lb_listener" "https" {
-    load_balancer_arn = aws_lb.alb.arn
-    port              = 443
-    protocol          = "HTTPS"
-    ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
-    certificate_arn   = data.terraform_remote_state.acm.outputs.certificate_arn
-    default_action {
-        type = "forward"
-        target_group_arn = aws_lb_target_group.blue.arn
-    }
+  load_balancer_arn = aws_lb.alb.arn
+  port              = 443
+  protocol          = "HTTPS"
+  ssl_policy        = "ELBSecurityPolicy-TLS13-1-2-2021-06"
+  certificate_arn   = data.terraform_remote_state.acm.outputs.certificate_arn
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.blue.arn
+  }
 }
 
 resource "aws_lb_listener" "http_redirect" {
