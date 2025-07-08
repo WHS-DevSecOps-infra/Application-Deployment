@@ -157,7 +157,7 @@ resource "aws_security_group" "alb_sg" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    destination_security_group_id = aws_security_group.ecs_sg.id
+    security_groups = [aws_security_group.ecs_sg.id]
   }
 
 }
