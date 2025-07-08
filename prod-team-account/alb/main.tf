@@ -146,7 +146,7 @@ resource "aws_lb_listener" "https" {
   }
 }
 
-resource "aws_lb_listener" "http_redirect" {
+resource "aws_lb_listener" "https_redirect" {
   load_balancer_arn = aws_lb.alb.arn
   port              = 80
   protocol          = "HTTP"
