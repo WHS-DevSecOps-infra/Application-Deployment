@@ -138,7 +138,7 @@ resource "aws_route_table_association" "private2" {
 }
 
 # security_group
-# ALB를 위한 security group에서는 외부 사용자를위해 HTTP(443) 포트만 열고 이후 tfsec 경고 무시
+# ALB를 위한 security group에서는 외부 사용자를위해 HTTPS(443) 포트만 열고 이후 tfsec 경고 무시
 #tfsec:ignore:aws-ec2-no-public-ingress-sgr
 resource "aws_security_group" "alb_sg" {
   name        = "${var.project_name}-alb-sg"
@@ -150,16 +150,8 @@ resource "aws_security_group" "alb_sg" {
     to_port     = 443
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
-    description = "Allow HTTP"
+    description = "Allow HTTPS"
   }
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    security_groups = [aws_security_group.ecs_sg.id]
-  }
-
 }
 
 # ECS
@@ -170,18 +162,29 @@ resource "aws_security_group" "ecs_sg" {
   description = "Security group for ECS tasks"
   vpc_id      = aws_vpc.vpc.id
 
-  ingress {
-    from_port       = 80
-    to_port         = 80
-    protocol        = "tcp"
-    security_groups = [aws_security_group.alb_sg.id]
-  }
-
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+}
 
+# Security Group Rules
+resource "aws_security_group_rule" "alb_egress" {
+    type              = "egress"
+    from_port         = 80
+    to_port           = 80
+    protocol          = "tcp"
+    source_security_group_id = aws_security_group.alb_sg.id
+    security_groups   = [aws_security_group.ecs_sg.id]
+}
+
+resource "aws_security_group_rule" "ecs_ingress" {
+    type              = "ingress"
+    from_port         = 80
+    to_port           = 80
+    protocol          = "tcp"
+    source_security_group_id = aws_security_group.ecs_sg.id
+    security_groups   = [aws_security_group.alb_sg.id]
 }
