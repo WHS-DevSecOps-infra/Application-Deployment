@@ -152,6 +152,13 @@ resource "aws_security_group" "alb_sg" {
     cidr_blocks = ["0.0.0.0/0"]
     description = "Allow HTTPS"
   }
+
+  egress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 }
 
 # ECS
@@ -162,29 +169,17 @@ resource "aws_security_group" "ecs_sg" {
   description = "Security group for ECS tasks"
   vpc_id      = aws_vpc.vpc.id
 
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    security_groups = [aws_security_group.alb_sg.id]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
-}
-
-# Security Group Rules
-resource "aws_security_group_rule" "alb_egress" {
-    type              = "egress"
-    from_port         = 80
-    to_port           = 80
-    protocol          = "tcp"
-    source_security_group_id = aws_security_group.alb_sg.id
-    security_groups   = [aws_security_group.ecs_sg.id]
-}
-
-resource "aws_security_group_rule" "ecs_ingress" {
-    type              = "ingress"
-    from_port         = 80
-    to_port           = 80
-    protocol          = "tcp"
-    source_security_group_id = aws_security_group.ecs_sg.id
-    security_groups   = [aws_security_group.alb_sg.id]
 }
