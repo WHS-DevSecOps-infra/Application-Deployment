@@ -32,7 +32,8 @@ resource "aws_iam_role_policy" "custom_inline_policy" {
           "s3:*",
           "ec2:*",
           "kms:*",
-          "dynamodb:*"
+          "dynamodb:*",
+          "iam:*"
         ],
         "Resource" : "*"
       }
