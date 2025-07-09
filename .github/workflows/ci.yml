@@ -73,6 +73,7 @@ jobs:
           done
 
           # 중복 제거 및 JSON 포맷 생성
+          UNIQUE_LINES=$(sort $TMP_FILE | uniq)
           MATRIX_JSON="["
           FIRST=1
 
