@@ -6,6 +6,6 @@ terraform {
     region         = "ap-northeast-2"
     encrypt        = true
     dynamodb_table = "s3-prod-lock"
-    
+
   }
 }
