@@ -68,7 +68,17 @@ resource "aws_iam_role_policy" "custom_inline_policy" {
           "dynamodb:*"
         ],
         "Resource" : "*"
-      }
+      },
+      {
+			"Sid": "Statement3",
+			"Effect": "Allow",
+			"Action": [
+				"iam:*"
+			],
+			"Resource": [
+				"*"
+			]
+		}
     ]
   })
 }
