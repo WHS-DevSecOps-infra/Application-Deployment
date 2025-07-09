@@ -70,15 +70,15 @@ resource "aws_iam_role_policy" "custom_inline_policy" {
         "Resource" : "*"
       },
       {
-			"Sid": "Statement3",
-			"Effect": "Allow",
-			"Action": [
-				"iam:*"
-			],
-			"Resource": [
-				"*"
-			]
-		}
+        "Sid" : "Statement3",
+        "Effect" : "Allow",
+        "Action" : [
+          "iam:*"
+        ],
+        "Resource" : [
+          "*"
+        ]
+      }
     ]
   })
 }
