@@ -171,13 +171,14 @@ jobs:
               PLAN_CONTENT="(plan success) No changes to apply. Everything looks good!"
             else
               # 길이 제한 없이 전체 내용 출력 (출력 너무 클 경우 GitHub가 거부할 수 있음 — 감수한 상태)
-              PLAN_CONTENT=$(cat $PLAN_TXT | \
-                sed 's/`/\\`/g' | \
-                sed 's/::/%::%/g' | \
-                tr -d '\r' | \
-                sed -r "s/\x1B\[[0-9;]*[JKmsu]//g")
-
-            fi
+            PLAN_CONTENT=$(
+              cat $PLAN_TXT | \
+              sed 's/`/\\`/g' | \
+              sed 's/::/%::%/g' | \
+              tr -d '\r' | \
+              sed -r "s/\x1B\[[0-9;]*[JKmsu]//g"
+            )
+          fi
           else
             echo "[ERROR] terraform plan failed. Skipping show."
             echo "Terraform plan failed." > $PLAN_TXT
