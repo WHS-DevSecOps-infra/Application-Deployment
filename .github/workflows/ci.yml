@@ -155,23 +155,27 @@ jobs:
           PLAN_FILE=tfplan.binary
           PLAN_TXT=plan.txt
 
-          # Plan 실행
-          terraform plan -no-color -out=$PLAN_FILE
-          PLAN_EXIT_CODE=$?
-
           # 기본 실패 메시지
           PLAN_CONTENT="Terraform plan failed."
 
-          if [ $PLAN_EXIT_CODE -eq 0 ]; then
-          # plan이 성공했을 경우에만 show 실행
+          # Terraform Plan 실행
+          if terraform plan -no-color -out=$PLAN_FILE; then
+            echo "[INFO] terraform plan succeeded."
+            
+            # show 및 no change 여부 판단
             terraform show -no-color $PLAN_FILE > $PLAN_TXT
-            IS_EMPTY=$(terraform show -json $PLAN_FILE 2>/dev/null | jq -e '.resource_changes == []' 2>/dev/null)
+
+            IS_EMPTY=$(terraform show -json $PLAN_FILE 2>/dev/null | jq -e '.resource_changes == []' 2>/dev/null || echo "false")
 
             if [ "$IS_EMPTY" = "true" ]; then
               PLAN_CONTENT="(plan success) No changes to apply. Everything looks good!"
             else
-              PLAN_CONTENT=$(head -n 200 $PLAN_TXT | sed 's/`/\\`/g' | head -c 60000)
+              # 제한 없이 전체 내용 출력 (출력 너무 클 경우 GitHub가 거부할 수 있음 — 감수한 상태)
+              PLAN_CONTENT=$(cat $PLAN_TXT | sed 's/`/\\`/g')
             fi
+          else
+            echo "[ERROR] terraform plan failed. Skipping show."
+            echo "Terraform plan failed." > $PLAN_TXT
           fi
 
           {
