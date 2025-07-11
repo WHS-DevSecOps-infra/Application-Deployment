@@ -159,7 +159,11 @@ jobs:
           terraform show -no-color $PLAN_FILE > $PLAN_TXT || echo "Plan failed" > $PLAN_TXT
 
           # plan 출력값을 멀티라인 환경 변수에 저장
-          PLAN_CONTENT=$(cat $PLAN_TXT | sed 's/`/\\`/g')
+          if grep -q "No changes. Infrastructure is up-to-date." $PLAN_TXT; then
+            PLAN_CONTENT="No changes."
+          else
+            PLAN_CONTENT=$(cat $PLAN_TXT | sed 's/`/\\`/g')
+          fi
 
           echo 'PLAN<<EOF' >> $GITHUB_OUTPUT
           cat plan.txt >> $GITHUB_OUTPUT
