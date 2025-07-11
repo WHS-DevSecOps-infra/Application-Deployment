@@ -159,10 +159,11 @@ jobs:
           terraform show -no-color $PLAN_FILE > $PLAN_TXT || echo "Plan failed" > $PLAN_TXT
 
           # plan 출력값을 멀티라인 환경 변수에 저장
-          if grep -q "No changes. Infrastructure is up-to-date." $PLAN_TXT; then
-            PLAN_CONTENT="No changes."
+          IS_EMPTY=$(terraform show -json tfplan.binary | jq '.resource_changes == []')
+          if [ "$IS_EMPTY" = "true" ]; then
+            PLAN_CONTENT="(plan success) No changes to apply. Everything looks good!"
           else
-            PLAN_CONTENT=$(cat $PLAN_TXT | sed 's/`/\\`/g')
+            PLAN_CONTENT=$(terraform show -no-color tfplan.binary | sed 's/`/\\`/g')
           fi
 
           echo 'PLAN<<EOF' >> $GITHUB_OUTPUT
