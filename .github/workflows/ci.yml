@@ -147,7 +147,7 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        continue-on-error: true #plan 실패해도 워크플로우 진행
+        continue-on-error: true
         run: |
           START_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
           echo "START_TIME=$START_TIME" >> $GITHUB_ENV
@@ -155,20 +155,29 @@ jobs:
           PLAN_FILE=tfplan.binary
           PLAN_TXT=plan.txt
 
-          terraform plan -no-color -out=$PLAN_FILE || echo "PLAN_FAILED=true" >> $GITHUB_ENV
-          terraform show -no-color $PLAN_FILE > $PLAN_TXT || echo "Plan failed" > $PLAN_TXT
+          terraform plan -no-color -out=$PLAN_FILE
+          PLAN_EXIT_CODE=$?
 
-          # plan 출력값을 멀티라인 환경 변수에 저장
-          IS_EMPTY=$(terraform show -json tfplan.binary | jq '.resource_changes == []')
-          if [ "$IS_EMPTY" = "true" ]; then
-            PLAN_CONTENT="(plan success) No changes to apply. Everything looks good!"
+          if [ $PLAN_EXIT_CODE -ne 0 ]; then
+            echo "PLAN_FAILED=true" >> $GITHUB_ENV
+            echo "Terraform plan failed." > $PLAN_TXT
+            PLAN_CONTENT=" Terraform plan failed."
           else
-            PLAN_CONTENT=$(terraform show -no-color tfplan.binary | sed 's/`/\\`/g')
+            terraform show -no-color $PLAN_FILE > $PLAN_TXT
+            IS_EMPTY=$(terraform show -json $PLAN_FILE | jq '.resource_changes == []')
+            if [ "$IS_EMPTY" = "true" ]; then
+              PLAN_CONTENT="(plan success) No changes to apply. Everything looks good!"
+            else
+              PLAN_CONTENT=$(cat $PLAN_TXT | sed 's/`/\\`/g')
+            fi
           fi
 
-          echo 'PLAN<<EOF' >> $GITHUB_OUTPUT
-          cat plan.txt >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
+          {
+            echo "PLAN_CONTENT<<EOF"
+            echo "$PLAN_CONTENT"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
+
         working-directory: ${{ matrix.dir }}
 
       - name: Comment Terraform Plan on PR
