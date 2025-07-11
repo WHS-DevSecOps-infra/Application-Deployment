@@ -170,7 +170,7 @@ jobs:
             if [ "$IS_EMPTY" = "true" ]; then
               PLAN_CONTENT="(plan success) No changes to apply. Everything looks good!"
             else
-              PLAN_CONTENT=$(cat $PLAN_TXT | sed 's/`/\\`/g' | head -n 200)
+              PLAN_CONTENT=$(head -n 200 $PLAN_TXT | sed 's/`/\\`/g' | head -c 60000)
             fi
           fi
 
@@ -178,7 +178,7 @@ jobs:
             echo "PLAN_CONTENT<<EOF"
             echo "$PLAN_CONTENT"
             echo "EOF"
-          } >> $GITHUB_OUTPUT
+          } >> "$GITHUB_OUTPUT"
         working-directory: ${{ matrix.dir }}
 
       - name: Comment Terraform Plan on PR
