@@ -155,20 +155,22 @@ jobs:
           PLAN_FILE=tfplan.binary
           PLAN_TXT=plan.txt
 
+          # Plan 실행
           terraform plan -no-color -out=$PLAN_FILE
           PLAN_EXIT_CODE=$?
 
-          if [ $PLAN_EXIT_CODE -ne 0 ]; then
-            echo "PLAN_FAILED=true" >> $GITHUB_ENV
-            echo "Terraform plan failed." > $PLAN_TXT
-            PLAN_CONTENT=" Terraform plan failed."
-          else
+          # 기본 실패 메시지
+          PLAN_CONTENT="Terraform plan failed."
+
+          if [ $PLAN_EXIT_CODE -eq 0 ]; then
+          # plan이 성공했을 경우에만 show 실행
             terraform show -no-color $PLAN_FILE > $PLAN_TXT
-            IS_EMPTY=$(terraform show -json $PLAN_FILE | jq '.resource_changes == []')
+            IS_EMPTY=$(terraform show -json $PLAN_FILE 2>/dev/null | jq -e '.resource_changes == []' 2>/dev/null)
+
             if [ "$IS_EMPTY" = "true" ]; then
               PLAN_CONTENT="(plan success) No changes to apply. Everything looks good!"
             else
-              PLAN_CONTENT=$(cat $PLAN_TXT | sed 's/`/\\`/g')
+              PLAN_CONTENT=$(cat $PLAN_TXT | sed 's/`/\\`/g' | head -n 200)
             fi
           fi
 
@@ -177,7 +179,6 @@ jobs:
             echo "$PLAN_CONTENT"
             echo "EOF"
           } >> $GITHUB_OUTPUT
-
         working-directory: ${{ matrix.dir }}
 
       - name: Comment Terraform Plan on PR
