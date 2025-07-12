@@ -80,14 +80,10 @@ resource "aws_lb" "alb" {
   security_groups    = [data.terraform_remote_state.vpc.outputs.alb_security_group_id]
   subnets            = data.terraform_remote_state.vpc.outputs.public_subnet_ids
 
-<<<<<<< HEAD
+
     drop_invalid_header_fields = true
     enable_deletion_protection = true
-=======
 
-  drop_invalid_header_fields = true
-  enable_deletion_protection = true
->>>>>>> 90ca48c (tfsec scan 문제 해결)
 
   tags = {
     Name = "${var.project_name}-alb"
