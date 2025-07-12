@@ -66,7 +66,7 @@ jobs:
             ["prod-team-account/alb"]="prod-team-account/deploy/vpc prod-team-account/deploy/acm"
             ["prod-team-account/ecs"]="prod-team-account/deploy/vpc prod-team-account/deploy/iam prod-team-account/deploy/alb operation-team-account/deploy/ecr"
             ["prod-team-account/codedeploy"]="prod-team-account/deploy/ecs"
-          )ㅜ
+          )
 
           # Push 이벤트에 포함된 변경된 파일 목록을 호출
           echo "Comparing changes between ${{ github.event.before }} and ${{ github.event.after }}"
@@ -106,37 +106,13 @@ jobs:
 
           # 실행할 최종 매트릭스를 JSON 형식으로 생성
           MATRIX_ITEMS=()
-<<<<<<< HEAD
+
           for DIR in $ORDERED_DIRS; do
             if [[ " ${CHANGED_DIRS[@]} " =~ " ${DIR} " ]]; then
               ACCOUNT_PREFIX=$(echo $DIR | cut -d- -f1)
               ROLE_KEY="${ROLE_MAP[$ACCOUNT_PREFIX]}"
               MATRIX_ITEMS+=("{\"dir\":\"$DIR\",\"role_key\":\"$ROLE_KEY\"}")
-=======
 
-          for KEY in "${!ROLE_MAP[@]}"; do
-            VAR_NAME="FILTER_OUTPUTS_${KEY}"
-            VALUE="${!VAR_NAME}"
-
-            if [ "$VALUE" = "true" ]; then
-              BASE_DIR="${KEY}-team-account"
-
-              # 루트 디렉터리 검사
-              TF_COUNT_ROOT=$(find "$BASE_DIR" -maxdepth 1 -name '*.tf' | wc -l)
-              if [ "$TF_COUNT_ROOT" -gt 0 ]; then
-                MATRIX_ITEMS+=("{\"dir\":\"$BASE_DIR\",\"role_key\":\"${ROLE_MAP[$KEY]}\"}")
-              fi
-
-              # 하위 디렉터리 검사
-              for DIR in $(find $BASE_DIR -type d -mindepth 1); do
-                if [[ "$DIR" != *".terraform"* && "$DIR" != "$BASE_DIR/modules" ]]; then
-                  TF_COUNT=$(find "$DIR" -maxdepth 1 -name '*.tf' | wc -l)
-                  if [ "$TF_COUNT" -gt 0 ]; then
-                    MATRIX_ITEMS+=("{\"dir\":\"$DIR\",\"role_key\":\"${ROLE_MAP[$KEY]}\"}")
-                  fi
-                fi
-              done
->>>>>>> bbb3fbd (루트 디렉토리 참조, .tf 없는 폴더는 실행 X)
             fi
           done
 
