@@ -30,12 +30,9 @@ jobs:
               - 'prod-team-account/**'
             dev:
               - 'dev-team-account/**'
-            security:
-              - 'security-team-account/**'
             stage:
               - 'stage-team-account/**'
-            management:
-              - 'management-team-account/**'
+
 
       - name: Build Matrix from Filter (with subdirs)
         id: set
@@ -45,9 +42,7 @@ jobs:
           FILTER_OUTPUTS_identity: ${{ steps.filter.outputs.identity }}
           FILTER_OUTPUTS_prod: ${{ steps.filter.outputs.prod }}
           FILTER_OUTPUTS_dev: ${{ steps.filter.outputs.dev }}
-          FILTER_OUTPUTS_security: ${{ steps.filter.outputs.security }}
           FILTER_OUTPUTS_stage: ${{ steps.filter.outputs.stage }}
-          FILTER_OUTPUTS_management: ${{ steps.filter.outputs.management }}
         run: |
           # 계정 별 IAM Role Key 매핑
           declare -A ROLE_MAP=(
@@ -55,9 +50,8 @@ jobs:
             ["identity"]="ROLE_ARN_IDENTITY"
             ["prod"]="ROLE_ARN_PROD"
             ["dev"]="ROLE_ARN_DEV"
-            ["security"]="ROLE_ARN_SECURITY"
             ["stage"]="ROLE_ARN_STAGE"
-            ["management"]="ROLE_ARN_MANAGEMENT"
+
           )
 
           MATRIX_ITEMS=()
