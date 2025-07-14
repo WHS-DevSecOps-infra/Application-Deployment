@@ -184,9 +184,9 @@ jobs:
           fi
 
           {
-            echo "PLAN_CONTENT<<EOF"
-            echo "$PLAN_CONTENT"
-            echo "EOF"
+            printf "PLAN_CONTENT<<EOF\n"
+            printf "%s\n" "$PLAN_CONTENT"
+            printf "EOF\n"
           } >> "$GITHUB_OUTPUT"
         working-directory: ${{ matrix.dir }}
 
