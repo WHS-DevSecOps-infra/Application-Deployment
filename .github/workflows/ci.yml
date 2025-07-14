@@ -10,7 +10,6 @@ on:
       - "dev-team-account/**"
       - "stage-team-account/**"
 
-
 permissions:
   contents: read # 코드 읽을 수 있는 권한
   pull-requests: write # PR 코멘트 작성 등 가능
@@ -167,20 +166,16 @@ jobs:
             # show 및 no change 여부 판단
             terraform show -no-color $PLAN_FILE > $PLAN_TXT
 
+            terraform show -json $PLAN_FILE > plan.json
+
             IS_EMPTY=$(terraform show -json $PLAN_FILE 2>/dev/null | jq -e '.resource_changes == []' 2>/dev/null || echo "false")
 
             if [ "$IS_EMPTY" = "true" ]; then
               PLAN_CONTENT="(plan success) No changes to apply. Everything looks good!"
             else
               # 길이 제한 없이 전체 내용 출력 (출력 너무 클 경우 GitHub가 거부할 수 있음 — 감수한 상태)
-            PLAN_CONTENT=$(
-              cat $PLAN_TXT | \
-              sed 's/`/\\`/g' | \
-              sed 's/::/%::%/g' | \
-              tr -d '\r' | \
-              sed -r "s/\x1B\[[0-9;]*[JKmsu]//g"
-            )
-          fi
+            PLAN_CONTENT=$(cat $PLAN_TXT)
+            fi
           else
             echo "[ERROR] terraform plan failed. Skipping show."
             echo "Terraform plan failed." > $PLAN_TXT
