@@ -155,61 +155,50 @@ jobs:
 
           PLAN_FILE=tfplan.binary
           PLAN_TXT=plan.txt
-
-          PLAN_CONTENT="Terraform plan failed."
+          PLAN_TXT_CLEAN=plan_content.txt
 
           if terraform plan -no-color -out=$PLAN_FILE; then
             echo "[INFO] terraform plan succeeded."
-
             terraform show -no-color $PLAN_FILE > $PLAN_TXT
             terraform show -json $PLAN_FILE > plan.json
 
             IS_EMPTY=$(terraform show -json $PLAN_FILE 2>/dev/null | jq -e '.resource_changes == []' 2>/dev/null || echo "false")
 
             if [ "$IS_EMPTY" = "true" ]; then
-              PLAN_CONTENT="(plan success) No changes to apply. Everything looks good!"
+              echo "(plan success) No changes to apply. Everything looks good!" > $PLAN_TXT_CLEAN
             else
-              # Escape 처리 추가됨
-              PLAN_CONTENT=$(
-                cat $PLAN_TXT | \
+              cat $PLAN_TXT | \
                 sed 's/`/\\`/g' | \
                 sed 's/::/%::%/g' | \
                 tr -d '\r' | \
-                sed -r "s/\x1B\[[0-9;]*[JKmsu]//g"
-              )
+                sed -r "s/\x1B\[[0-9;]*[JKmsu]//g" > $PLAN_TXT_CLEAN
             fi
           else
-            echo "[ERROR] terraform plan failed. Skipping show."
-            echo "Terraform plan failed." > $PLAN_TXT
+            echo "[ERROR] terraform plan failed. Skipping show." > $PLAN_TXT_CLEAN
           fi
 
-          {
-            printf "PLAN_CONTENT<<EOF\n"
-            printf "%s\n" "$PLAN_CONTENT"
-            printf "EOF\n"
-          } >> "$GITHUB_OUTPUT"
+          # PR comment용 텍스트 조립
+          echo "## [Terraform Plan Summary]" > comment.txt
+          echo "| 항목            | 값 |" >> comment.txt
+          echo "|-----------------|-----|" >> comment.txt
+          echo "| **Status**      | ${{ steps.plan.outcome }} |" >> comment.txt
+          echo "| **Directory**   | ${{ matrix.dir }} |" >> comment.txt
+          echo "| **Executed At** | $START_TIME |" >> comment.txt
+          echo "" >> comment.txt
+          echo "---" >> comment.txt
+          echo "" >> comment.txt
+          echo "### Plan Output" >> comment.txt
+          echo '```hcl' >> comment.txt
+          cat $PLAN_TXT_CLEAN >> comment.txt
+          echo '```' >> comment.txt
         working-directory: ${{ matrix.dir }}
 
-      - name: Comment Terraform Plan on PR
+      - name: Post Terraform Plan Comment
         if: github.event.pull_request.number != ''
         uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.pull_request.number }}
-          body: |
-            ## [Terraform Plan Summary]
-            | 항목            | 값 |
-            |-----------------|-----|
-            | **Status**      | `${{ steps.plan.outcome }}` |
-            | **Directory**   | `${{ matrix.dir }}`  |
-            | **Executed At** | `${{ env.START_TIME }}` |
-
-
-            ---
-
-            ### Plan Output
-            ```hcl
-            ${{ steps.plan.outputs.PLAN_CONTENT }}
-            ```
+          body-path: ${{ matrix.dir }}/comment.txt
 
       - name: Setup Infracost # 비용 예측 도구 세팅
         uses: infracost/actions/setup@v2
