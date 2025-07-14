@@ -152,7 +152,7 @@ jobs:
 
       - name: Terraform Plan
         id: plan
-        continue-on-error: true
+        continue-on-error: false
         run: |
           START_TIME=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
           echo "START_TIME=$START_TIME" >> $GITHUB_ENV
