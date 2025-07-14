@@ -16,7 +16,7 @@ data "terraform_remote_state" "acm" {
   backend = "s3"
   config = {
     bucket = "cloudfence-prod-state"
-    key    = "prod-team-account/deploy/acm/terraform.tfstate"
+    key    = "deploy/acm.tfstate"
     region = "ap-northeast-2"
   }
 }
@@ -25,7 +25,7 @@ data "terraform_remote_state" "vpc" {
   backend = "s3"
   config = {
     bucket = "cloudfence-prod-state"
-    key    = "prod-team-account/deploy/vpc/terraform.tfstate"
+    key    = "deploy/vpc.tfstate"
     region = "ap-northeast-2"
   }
 }
@@ -81,9 +81,8 @@ resource "aws_lb" "alb" {
   subnets            = data.terraform_remote_state.vpc.outputs.public_subnet_ids
 
 
-    drop_invalid_header_fields = true
-    enable_deletion_protection = true
-
+  drop_invalid_header_fields = true
+  enable_deletion_protection = true
 
   tags = {
     Name = "${var.project_name}-alb"

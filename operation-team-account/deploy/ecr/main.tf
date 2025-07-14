@@ -16,7 +16,7 @@ data "terraform_remote_state" "iam" {
   backend = "s3"
   config = {
     bucket = "cloudfence-prod-state"
-    key    = "prod-team-account/deploy/iam/terraform.tfstate"
+    key    = "deploy/iam.tfstate"
     region = "ap-northeast-2"
   }
 }
