@@ -11,6 +11,10 @@ on:
       - "dev-team-account/**"
       - "stage-team-account/**"
 
+env:
+  ACTIONS_STEP_DEBUG: false
+
+
 permissions:
   contents: read
   pull-requests: write
