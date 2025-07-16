@@ -16,11 +16,7 @@ data "terraform_remote_state" "alb" {
   backend = "s3"
   config = {
     bucket = "cloudfence-prod-state"
-<<<<<<< HEAD
     key    = "deploy/alb.tfstate"
-=======
-    key    = "prod-team-account/deploy/alb/terraform.tfstate"
->>>>>>> fca52e1 (폴더 구조 개편)
     region = "ap-northeast-2"
   }
 }
@@ -29,11 +25,7 @@ data "terraform_remote_state" "iam" {
   backend = "s3"
   config = {
     bucket = "cloudfence-prod-state"
-<<<<<<< HEAD
     key    = "deploy/iam.tfstate"
-=======
-    key    = "prod-team-account/deploy/iam/terraform.tfstate"
->>>>>>> fca52e1 (폴더 구조 개편)
     region = "ap-northeast-2"
   }
 }
@@ -42,11 +34,7 @@ data "terraform_remote_state" "ecs" {
   backend = "s3"
   config = {
     bucket = "cloudfence-prod-state"
-<<<<<<< HEAD
     key    = "deploy/ecs.tfstate"
-=======
-    key    = "prod-team-account/deploy/ecs/terraform.tfstate"
->>>>>>> fca52e1 (폴더 구조 개편)
     region = "ap-northeast-2"
   }
 }
