@@ -11,7 +11,6 @@ on:
       - "dev-team-account/**"
       - "security-team-account/**"
       - "stage-team-account/**"
-      - "management-team-account/**"
 
 permissions:
   contents: read
@@ -39,7 +38,7 @@ jobs:
           echo "Changed files:"
           echo "$FILES"
 
-          declare -A ROLE_MAP=( 
+          declare -A ROLE_MAP=(
             ["operation-team-account"]="ROLE_ARN_OPERATION"
             ["identity-team-account"]="ROLE_ARN_IDENTITY"
             ["prod-team-account"]="ROLE_ARN_PROD"
