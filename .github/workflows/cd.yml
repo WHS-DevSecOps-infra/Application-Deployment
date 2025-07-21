@@ -65,8 +65,9 @@ jobs:
             ["prod-team-account/vpc"]=""
             ["prod-team-account/iam"]=""
             ["prod-team-account/acm"]=""
+            ["prod-team-account/waf"]=""
             ["operation-team-account/ecr"]="prod-team-account/deploy/iam"
-            ["prod-team-account/alb"]="prod-team-account/deploy/vpc prod-team-account/deploy/acm"
+            ["prod-team-account/alb"]="prod-team-account/deploy/vpc prod-team-account/deploy/acm prod-team-account/deploy/waf"
             ["prod-team-account/ecs"]="prod-team-account/deploy/vpc prod-team-account/deploy/iam prod-team-account/deploy/alb operation-team-account/deploy/ecr"
             ["prod-team-account/codedeploy"]="prod-team-account/deploy/ecs"
           )

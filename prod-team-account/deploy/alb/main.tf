@@ -30,43 +30,12 @@ data "terraform_remote_state" "vpc" {
   }
 }
 
-# WAF
-resource "aws_wafv2_web_acl" "alb_waf" {
-  name        = "${var.project_name}-alb-waf"
-  description = "WAF for ALB"
-  scope       = "REGIONAL"
-
-  default_action {
-    allow {}
-  }
-
-  visibility_config {
-    cloudwatch_metrics_enabled = true
-    metric_name                = "waf-alb-metric"
-    sampled_requests_enabled   = true
-  }
-
-  rule {
-    name     = "AWS-AWSManagedRulesCommonRuleSet"
-    priority = 1
-    override_action {
-      none {}
-    }
-    statement {
-      managed_rule_group_statement {
-        vendor_name = "AWS"
-        name        = "AWSManagedRulesCommonRuleSet"
-      }
-    }
-    visibility_config {
-      cloudwatch_metrics_enabled = true
-      metric_name                = "AWSManagedRulesCommonRuleSet"
-      sampled_requests_enabled   = true
-    }
-  }
-
-  tags = {
-    Name = "${var.project_name}-alb-waf"
+data "terraform_remote_state" "waf" {
+  backend = "s3"
+  config = {
+    bucket = "cloudfence-prod-state"
+    key    = "deploy/waf.tfstate"
+    region = "ap-northeast-2"
   }
 }
 
@@ -158,6 +127,6 @@ resource "aws_lb_listener" "https_redirect" {
 # WAF와 ALB 연결
 resource "aws_wafv2_web_acl_association" "alb_association" {
   resource_arn = aws_lb.alb.arn
-  web_acl_arn  = aws_wafv2_web_acl.alb_waf.arn
+  web_acl_arn  = data.terraform_remote_state.waf.outputs.web_acl_arn
   depends_on   = [aws_lb.alb]
 }
