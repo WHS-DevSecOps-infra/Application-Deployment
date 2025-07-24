@@ -118,3 +118,10 @@ resource "aws_wafv2_web_acl" "alb_waf" {
     Name = "${var.project_name}-alb-waf"
   }
 }
+
+# S3로 로그 전송하도록 설정
+resource "aws_wafv2_web_acl_logging_configuration" "waf_logging" {
+  resource_arn            = aws_wafv2_web_acl.alb_waf.arn
+  log_destination_configs = ["arn:aws:s3:::whs-aws-logs"]
+}
+
