@@ -130,7 +130,7 @@ resource "aws_wafv2_web_acl_logging_configuration" "waf_logging" {
     default_behavior = "DROP"
     filter {
       behavior    = "KEEP"
-      requirement = "MEET_ANY"
+      requirement = "MEETS_ANY"
       condition {
         action_condition {
           action = "BLOCK"
