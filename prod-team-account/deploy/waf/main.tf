@@ -25,15 +25,15 @@ locals {
 
 # IP 기반 요청 제한 규칙 생성
 resource "aws_wafv2_rule_group" "rate_limit_rule" {
-  name        = "${var.project_name}-rate-limit-rule"
-  scope       = "REGIONAL"
-  capacity    = 50 
+  name     = "${var.project_name}-rate-limit-rule"
+  scope    = "REGIONAL"
+  capacity = 50
   rule {
     name     = "RateLimit5Min2000"
     priority = 10
 
     action {
-      block {} 
+      block {}
     }
 
     statement {
@@ -93,18 +93,20 @@ resource "aws_wafv2_web_acl" "alb_waf" {
   }
 
   # 생성된 규칙을 사용하여 요청 제한 규칙 추가
-  rule{
+  rule {
     name     = "RateLimitRule"
     priority = 50
-
-    override_action {
-      none {}
-    }
 
     statement {
       rule_group_reference_statement {
         arn = aws_wafv2_rule_group.rate_limit_rule.arn
       }
+    }
+
+    visibility_config {
+      cloudwatch_metrics_enabled = true
+      metric_name                = "RateLimitRuleMetric"
+      sampled_requests_enabled   = true
     }
   }
 
@@ -122,6 +124,18 @@ resource "aws_wafv2_web_acl" "alb_waf" {
 # S3로 로그 전송하도록 설정
 resource "aws_wafv2_web_acl_logging_configuration" "waf_logging" {
   resource_arn            = aws_wafv2_web_acl.alb_waf.arn
-  log_destination_configs = ["arn:aws:s3:::whs-aws-logs"]
+  log_destination_configs = ["arn:aws:s3:::${var.bucket_name}"]
+
+  logging_filter {
+    default_behavior = "DROP"
+    filter {
+      behavior = "KEEP"
+      condition {
+        action_condition {
+          action = "BLOCK"
+        }
+      }
+    }
+  }
 }
 
